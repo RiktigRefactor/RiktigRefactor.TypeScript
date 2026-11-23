@@ -122,9 +122,9 @@ export function toProtocolEdits(workspace: Workspace, edits: readonly TextEdit[]
     }));
 }
 
-/** Applies protocol edits to the workspace's files and returns the changed files' new text. */
-export function applyProtocolEdits(workspace: Workspace, edits: readonly Edit[]): Map<string, string> {
-    const textEdits: TextEdit[] = edits.map((edit) => {
+/** Converts protocol edits, with 1-based lines and columns, to offsets in the workspace's files. */
+export function toTextEdits(workspace: Workspace, edits: readonly Edit[]): TextEdit[] {
+    return edits.map((edit) => {
         const fileName = workspace.absolutePath(edit.file);
         const text = workspace.files.get(fileName);
         if (text === undefined) throw new Error(`The edit's file ${edit.file} is not in the workspace.`);
@@ -133,7 +133,11 @@ export function applyProtocolEdits(workspace: Workspace, edits: readonly Edit[])
         if (start === undefined || end === undefined) throw new Error(`The edit's range is outside ${edit.file}.`);
         return { fileName, start, end, newText: edit.newText };
     });
-    const editMap = new EditMap(textEdits);
+}
+
+/** Applies protocol edits to the workspace's files and returns the changed files' new text. */
+export function applyProtocolEdits(workspace: Workspace, edits: readonly Edit[]): Map<string, string> {
+    const editMap = new EditMap(toTextEdits(workspace, edits));
     const changed = new Map<string, string>();
     for (const fileName of editMap.changedFiles)
         changed.set(fileName, editMap.apply(fileName, workspace.files.get(fileName)!));
