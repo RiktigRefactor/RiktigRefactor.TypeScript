@@ -101,6 +101,9 @@ export function extractIife(
         );
     }
 
+    const typeChange = plan.findTypeChange(program, extractedProgram, editMap);
+    if (typeChange) return refuse(workspace, "type-would-change", typeChange, site());
+
     const verificationProblem = plan.verify(program, extractedProgram, workspace, extractedWorkspace, editMap);
     if (verificationProblem) {
         return refuse(workspace, "internal-verification-failed", verificationProblem, site(), bugReportSuggestion);
@@ -214,6 +217,8 @@ function isDirectEval(node: ts.Node): boolean {
 interface ExtractionPlan {
     edits: TextEdit[];
     isInAnnotation(editMap: EditMap, diagnostic: ts.Diagnostic): boolean;
+    /** The selected expression's type must be the type of the call that replaces it. */
+    findTypeChange(oldProgram: ts.Program, newProgram: ts.Program, editMap: EditMap): string | undefined;
     verify(
         oldProgram: ts.Program,
         newProgram: ts.Program,
@@ -751,6 +756,7 @@ class ExtractionAnalysis {
         const edits: TextEdit[] = [];
         let header: string;
         let footer: string;
+        let callOffsetInHeader: number;
         if (selection.kind === "expression") {
             const needsParenthesizedBody =
                 !this.naive && (isLowerPrecedenceThanAssignment(selection.expression) || this.text[this.start] === "{");
@@ -761,12 +767,14 @@ class ExtractionAnalysis {
             header = `${isNewCallee ? "(" : ""}((${parameterList}): ${returnTypeText} => ${needsParenthesizedBody ? "(" : ""}`;
             footer = `${needsParenthesizedBody ? ")" : ""})(${argumentList})${isNewCallee ? ")" : ""}`;
             if (needsSemicolon) header = ";" + header;
+            callOffsetInHeader = (needsSemicolon ? 1 : 0) + (isNewCallee ? 1 : 0);
             edits.push({ fileName, start: this.start, end: this.start, newText: header });
             edits.push({ fileName, start: this.end, end: this.end, newText: footer });
         } else {
             const indentation = this.lineIndentation(this.start);
             const unit = indentation.includes("\t") ? "\t" : "    ";
             header = `${callPrefix}((${parameterList}): ${returnTypeText} => {\n${indentation}${unit}`;
+            callOffsetInHeader = callPrefix.length;
             const returnStatement = outputs.length > 0 ? `\n${indentation}${unit}return { ${outputNames} };` : "";
             footer = `${returnStatement}\n${indentation}})(${argumentList})${callSuffix};`;
             edits.push({ fileName, start: this.start, end: this.start, newText: header });
@@ -780,7 +788,7 @@ class ExtractionAnalysis {
         const footerText = footer;
         const parameterOffsetsInHeader = new Map<ts.Symbol, number>();
         {
-            let offset = headerText.indexOf("((") + 2;
+            let offset = callOffsetInHeader + 2;
             for (const parameter of parameters) {
                 parameterOffsetsInHeader.set(parameter.symbol, offset);
                 offset += `${parameter.name}: ${parameter.typeText}, `.length;
@@ -796,6 +804,26 @@ class ExtractionAnalysis {
                 if (diagnostic.file?.fileName !== fileName || diagnostic.start === undefined) return false;
                 const origin = editMap.newToOld(fileName, diagnostic.start);
                 return origin.isPureInsertion && origin.oldPosition === start;
+            },
+            findTypeChange(oldProgram, newProgram, editMap) {
+                if (selection.kind !== "expression") return undefined;
+                const oldChecker = oldProgram.getTypeChecker();
+                const oldExpression = findNodeAt(oldProgram.getSourceFile(fileName)!, start, end) as ts.Expression;
+                const oldType = oldChecker.typeToString(typeAsUsed(oldChecker, oldExpression));
+                const newSourceFile = newProgram.getSourceFile(fileName)!;
+                const callStart = editMap.oldToNew(fileName, start) - headerText.length + callOffsetInHeader;
+                const callEnd =
+                    editMap.oldToNew(fileName, end) -
+                    footerText.length +
+                    footerText.lastIndexOf(`(${argumentList})`) +
+                    argumentList.length +
+                    2;
+                const call = findNodeAt(newSourceFile, callStart, callEnd);
+                if (!call) return "The call that replaces the expression was not found.";
+                const newChecker = newProgram.getTypeChecker();
+                const newType = newChecker.typeToString(newChecker.getTypeAtLocation(call));
+                if (oldType === newType) return undefined;
+                return `The expression has type \`${oldType}\`, but the call that replaces it would have type \`${newType}\`.`;
             },
             verify(oldProgram, newProgram, oldWorkspace, newWorkspace, editMap) {
                 const newStart = editMap.oldToNew(fileName, start);
@@ -835,16 +863,7 @@ class ExtractionAnalysis {
     }
 
     private expressionReturnTypeText(expression: ts.Expression): string {
-        let type = this.checker.getTypeAtLocation(expression);
-        const isFreshLiteral = (type.flags & ts.TypeFlags.Literal) !== 0 && this.checker.getWidenedType(type) !== type;
-        const isConstInitializer =
-            ts.isVariableDeclaration(expression.parent) &&
-            expression.parent.initializer === expression &&
-            (ts.getCombinedNodeFlags(expression.parent) & ts.NodeFlags.Const) !== 0;
-        if (isFreshLiteral && !isConstInitializer && !this.checker.getContextualType(expression)) {
-            type = this.checker.getWidenedType(type);
-        }
-        return this.typeText(type, expression);
+        return this.typeText(typeAsUsed(this.checker, expression), expression);
     }
 
     private lineIndentation(position: number): string {
@@ -899,6 +918,35 @@ class ExtractionAnalysis {
     private endsWithComment(position: number): boolean {
         return this.text[position] === "/" && (this.text[position - 1] === "*" || this.text[position - 1] === "/");
     }
+}
+
+/**
+ * The expression's type as its context uses it: a literal widens (`"on"` to `string`)
+ * unless a `const` declaration or a contextual type keeps it.
+ */
+function typeAsUsed(checker: ts.TypeChecker, expression: ts.Expression): ts.Type {
+    const parent = expression.parent;
+    if (
+        ts.isVariableDeclaration(parent) &&
+        parent.initializer === expression &&
+        !parent.type &&
+        ts.isIdentifier(parent.name)
+    ) {
+        return checker.getTypeAtLocation(parent.name);
+    }
+    const type = checker.getTypeAtLocation(expression);
+    if (type.flags & ts.TypeFlags.Literal && !checker.getContextualType(expression))
+        return checker.getBaseTypeOfLiteralType(type);
+    return type;
+}
+
+/** The outermost node with exactly this span. */
+function findNodeAt(sourceFile: ts.SourceFile, start: number, end: number): ts.Node | undefined {
+    let found: ts.Node | undefined;
+    forEachDescendant(sourceFile, (node) => {
+        if (!found && node.getStart(sourceFile) === start && node.end === end) found = node;
+    });
+    return found;
 }
 
 function checkIdentifierBindsTo(

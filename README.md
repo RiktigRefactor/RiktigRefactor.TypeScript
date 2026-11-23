@@ -54,7 +54,7 @@ It refuses when it can't prove that wrapping keeps behavior, for example when:
 - a type it must write out can't be written, such as an anonymous class or `typeof` of a name the parameters shadow;
 - the file calls `eval` directly.
 
-After extracting, it type-checks the result and checks that every variable binds as before, with the selection's uses of locals now bound to the new parameters.
+After extracting, it type-checks the result, checks that the call has the type the expression had (a literal keeps its literal type only where a `const` or a contextual type kept it), and checks that every variable binds as before, with the selection's uses of locals now bound to the new parameters.
 
 Each refusal has a code, listed in [refusal-codes.md](refusal-codes.md).
 

@@ -28,4 +28,5 @@ A new code is listed in the release notes.
 | `declaration-escapes` | Extract IIFE: a `let`, `const`, or class declared in the selection is used after it, or a `using` declaration would be disposed when the function returns instead of at the end of its block. |
 | `hoisted-declaration` | Extract IIFE: the selection declares a `var` or a function, which is hoisted to the enclosing function. |
 | `type-not-nameable` | Extract IIFE: a type that has to be written out as a parameter or return type annotation can't be. |
+| `type-would-change` | Extract IIFE: the call that replaces the expression would have a different type than the expression had. |
 | `internal-verification-failed` | The tool's own check of its result failed. This is a bug in the tool; please report it. |

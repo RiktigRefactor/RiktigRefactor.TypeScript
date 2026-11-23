@@ -1,0 +1,4 @@
+{
+  "spec": ["TypeScript feature: contextual typing"],
+  "notes": "The lambda's parameter type comes from its context; the return type annotation keeps that context."
+}

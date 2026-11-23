@@ -72,6 +72,7 @@ export const RefusalCodes = [
     "declaration-escapes",
     "hoisted-declaration",
     "type-not-nameable",
+    "type-would-change",
     "internal-verification-failed",
 ] as const;
 

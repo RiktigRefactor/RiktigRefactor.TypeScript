@@ -1,0 +1,4 @@
+{
+  "spec": ["TypeScript feature: literal widening"],
+  "notes": "A let initialized with a literal has the widened type, so the return type is string and later assignments still compile."
+}
