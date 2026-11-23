@@ -1,0 +1,7 @@
+{
+  "options": { "newName": "radius" },
+  "refuse": "string-names-symbol",
+  "naiveShouldFail": true,
+  "spec": ["ECMAScript §13.10 Relational Operators", "TypeScript feature: narrowing"],
+  "notes": "The in operator looks the property up by the text of the string."
+}

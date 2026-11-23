@@ -1,0 +1,7 @@
+{
+  "options": { "newName": "amount" },
+  "refuse": "string-names-symbol",
+  "naiveShouldFail": true,
+  "spec": ["ECMAScript §13.2.5 Object Initializer"],
+  "notes": "A computed key whose type is the old name creates the property by its text."
+}

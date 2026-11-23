@@ -59,6 +59,7 @@ export const RefusalCodes = [
     "binding-would-change",
     "dynamic-access-possible",
     "runtime-protocol-name",
+    "string-names-symbol",
     "invalid-selection",
     "non-local-control-flow",
     "contains-await",

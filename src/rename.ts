@@ -77,6 +77,7 @@ export function rename(workspace: Workspace, request: RenameRequest): Result {
 
     const oldName = identifier.text;
     const newName = request.newName;
+    const isMember = (symbol.flags & memberFlags) !== 0;
     const invalidNameReason = findInvalidNameReason(oldName, newName);
     if (invalidNameReason) return refuse(workspace, "invalid-identifier", invalidNameReason, identifierSite);
 
@@ -100,7 +101,6 @@ export function rename(workspace: Workspace, request: RenameRequest): Result {
         );
     }
 
-    const isMember = (symbol.flags & memberFlags) !== 0;
     if (isMember && (runtimeProtocolNames.has(oldName) || runtimeProtocolNames.has(newName))) {
         return refuse(
             workspace,
@@ -126,6 +126,19 @@ export function rename(workspace: Workspace, request: RenameRequest): Result {
                 "conflicting-declaration",
                 `A type related to the renamed member already has a member named \`${newName}\`; the renamed member could override it or be overridden by it.`,
                 collision,
+            );
+        }
+    }
+
+    if (isMember) {
+        const renamedSpans = new Set(locations.map((location) => `${location.fileName}#${location.textSpan.start}`));
+        const literalUse = findLiteralUseOfName(program, workspace, checker, oldName, renamedSpans);
+        if (literalUse) {
+            return refuse(
+                workspace,
+                "string-names-symbol",
+                `A string names the member \`${oldName}\` where the property name reaches the runtime as text, and the rename would not change it.`,
+                literalUse,
             );
         }
     }
@@ -187,6 +200,7 @@ export function rename(workspace: Workspace, request: RenameRequest): Result {
 
 const duplicateDeclarationCodes = new Set([2300, 2393, 2440, 2451, 2567, 2718]);
 
+/** Reserved words may name members (`box.class`); compile errors catch a member also declared as a parameter. */
 function findInvalidNameReason(oldName: string, newName: string): string | undefined {
     const isPrivateName = oldName.startsWith("#");
     if (isPrivateName !== newName.startsWith("#")) {
@@ -345,4 +359,44 @@ function findStringsNamingSymbol(program: ts.Program, workspace: Workspace, oldN
         });
     }
     return warnings;
+}
+
+/**
+ * Property names reach the runtime as text in `in`, bracket access, string literal types, and computed keys.
+ * A string the rename doesn't change there could stop matching the renamed member.
+ */
+function findLiteralUseOfName(
+    program: ts.Program,
+    workspace: Workspace,
+    checker: ts.TypeChecker,
+    name: string,
+    renamedSpans: ReadonlySet<string>,
+) {
+    for (const fileName of workspace.files.keys()) {
+        const sourceFile = program.getSourceFile(fileName);
+        if (!sourceFile) continue;
+        let found: ReturnType<typeof siteOf> | undefined;
+        forEachDescendant(sourceFile, (node) => {
+            if (found) return;
+            if (ts.isComputedPropertyName(node)) {
+                const keyType = checker.getTypeAtLocation(node.expression);
+                const keyTypes = keyType.isUnion() ? keyType.types : [keyType];
+                if (keyTypes.some((type) => type.isStringLiteral() && type.value === name))
+                    found = siteOf(sourceFile, node);
+                return;
+            }
+            if (!ts.isStringLiteralLike(node) || node.text !== name) return;
+            if (renamedSpans.has(`${fileName}#${node.getStart(sourceFile) + 1}`)) return;
+            const parent = node.parent;
+            const isInOperand =
+                ts.isBinaryExpression(parent) &&
+                parent.operatorToken.kind === ts.SyntaxKind.InKeyword &&
+                parent.left === node;
+            const isBracketKey = ts.isElementAccessExpression(parent) && parent.argumentExpression === node;
+            const isLiteralType = ts.isLiteralTypeNode(parent);
+            if (isInOperand || isBracketKey || isLiteralType) found = siteOf(sourceFile, node);
+        });
+        if (found) return found;
+    }
+    return undefined;
 }
