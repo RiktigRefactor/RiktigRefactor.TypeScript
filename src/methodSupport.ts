@@ -359,3 +359,120 @@ export function cursorTrailer(workspace: Workspace, refactoring: string, fileNam
 }
 
 export { bugReportSuggestion };
+
+/** An import whose only remaining value use is rewritten would be elided, and its module would stop running. */
+export function checkImportsStay(analysis: Analysis, rewritten: readonly ts.Identifier[]) {
+    const rewrittenSet = new Set(rewritten);
+    for (const qualifier of rewritten) {
+        const alias = analysis.checker.getSymbolAtLocation(qualifier);
+        if (!alias || !(alias.flags & ts.SymbolFlags.Alias)) continue;
+        const importDeclaration = alias.declarations?.[0] && findAncestorImport(alias.declarations[0]);
+        if (!importDeclaration) continue;
+        const sourceFile = qualifier.getSourceFile();
+        const bindings = new Set<ts.Symbol>();
+        forEachDescendant(importDeclaration, (node) => {
+            if (ts.isIdentifier(node)) {
+                const bound = analysis.checker.getSymbolAtLocation(node);
+                if (bound && bound.flags & ts.SymbolFlags.Alias) bindings.add(bound);
+            }
+        });
+        let stillUsed = false;
+        forEachDescendant(sourceFile, (node) => {
+            if (stillUsed || !ts.isIdentifier(node) || rewrittenSet.has(node) || findAncestorImport(node)) return;
+            if (ts.isPartOfTypeNode(node)) return;
+            const bound = analysis.checker.getSymbolAtLocation(node);
+            if (bound && bindings.has(bound)) stillUsed = true;
+        });
+        if (!stillUsed) {
+            throw new Refusal(
+                "import-would-be-removed",
+                "After the move, this file would no longer use its import of the source module, so the compiler would drop the import and the module would stop running here.",
+                importDeclaration,
+            );
+        }
+    }
+}
+
+export function findAncestorImport(node: ts.Node): ts.ImportDeclaration | undefined {
+    for (let current: ts.Node | undefined = node; current; current = current.parent) {
+        if (ts.isImportDeclaration(current)) return current;
+    }
+    return undefined;
+}
+
+export function lineStart(text: string, position: number): number {
+    return text.lastIndexOf("\n", position - 1) + 1;
+}
+
+/** The member with its leading comments, and its whole lines when it has them to itself. */
+export function movedRange(sourceFile: ts.SourceFile, member: ts.Node) {
+    const text = sourceFile.text;
+    const comments = ts.getLeadingCommentRanges(text, member.getFullStart()) ?? [];
+    let textStart = member.getStart(sourceFile);
+    const firstComment = comments.find(
+        (comment) => text.slice(lineStart(text, comment.pos), comment.pos).trim() === "",
+    );
+    if (firstComment) textStart = firstComment.pos;
+    const start = lineStart(text, textStart);
+    const indentation = text.slice(start, textStart);
+    let deleteStart = textStart;
+    let deleteEnd = member.end;
+    const restOfLine = text.slice(
+        member.end,
+        text.indexOf("\n", member.end) === -1 ? text.length : text.indexOf("\n", member.end),
+    );
+    if (indentation.trim() === "" && restOfLine.trim() === "") {
+        deleteStart = start;
+        const newline = text.indexOf("\n", member.end);
+        deleteEnd = newline === -1 ? text.length : newline + 1;
+        const nextNewline = text.indexOf("\n", deleteEnd);
+        const nextLineIsBlank = nextNewline !== -1 && text.slice(deleteEnd, nextNewline).trim() === "";
+        const previousLine = text.slice(lineStart(text, Math.max(0, start - 1)), Math.max(0, start - 1)).trim();
+        if (nextLineIsBlank && (previousLine === "" || previousLine.endsWith("{"))) deleteEnd = nextNewline + 1;
+    }
+    return { textStart, deleteStart, deleteEnd, indentation };
+}
+
+export function insertionInto(targetFile: ts.SourceFile, target: ts.ClassDeclaration) {
+    const text = targetFile.text;
+    const classIndentation = text.slice(lineStart(text, target.getStart(targetFile)), target.getStart(targetFile));
+    if (target.members.length > 0) {
+        const first = target.members[0];
+        const firstStart = first.getStart(targetFile);
+        const comments = ts.getLeadingCommentRanges(text, first.getFullStart()) ?? [];
+        const anchor = comments.length > 0 ? comments[0].pos : firstStart;
+        const position = lineStart(text, anchor);
+        return {
+            position,
+            indentation: text.slice(position, anchor),
+            prefix: text.slice(position, anchor),
+            suffix: "\n\n",
+        };
+    }
+    const indentation = classIndentation + "    ";
+    const openBrace = text.indexOf("{", target.name!.end);
+    return { position: openBrace + 1, indentation, prefix: "\n" + indentation, suffix: "\n" + classIndentation };
+}
+
+/** Changes the indentation of the text's lines after the first, except lines inside string or template literals. */
+export function reindent(sourceFile: ts.SourceFile, start: number, end: number, from: string, to: string): string {
+    const text = sourceFile.text.slice(start, end);
+    if (from === to) return text;
+    const literalRanges: [number, number][] = [];
+    forEachDescendant(sourceFile, (node) => {
+        if (node.end <= start || node.getStart(sourceFile) >= end) return;
+        if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node) || ts.isTemplateLiteralToken(node)) {
+            literalRanges.push([node.getStart(sourceFile) - start, node.end - start]);
+        }
+    });
+    let result = "";
+    let lineBegin = 0;
+    for (const line of text.split("\n")) {
+        const isInsideLiteral = literalRanges.some(([from, to]) => lineBegin > from && lineBegin < to);
+        if (lineBegin > 0 && !isInsideLiteral && line.startsWith(from)) result += "\n" + to + line.slice(from.length);
+        else if (lineBegin > 0) result += "\n" + line;
+        else result += line;
+        lineBegin += line.length + 1;
+    }
+    return result;
+}
