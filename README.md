@@ -18,7 +18,7 @@ Where a name is also an implicit key, it keeps the key: renaming `total` in `{ t
 After renaming, the tool type-checks the result and re-binds every identifier in the workspace, and refuses if any reference would bind to a different declaration.
 It refuses when:
 
-- the new name is not a valid identifier, or is a reserved word;
+- the new name is not a valid identifier, or is a reserved word (allowed for members, as in `box.class`);
 - the symbol is declared or referenced outside the workspace, such as in the standard library;
 - the rename would introduce a compile error, or collide with an existing declaration;
 - a name would be captured or un-shadowed, or a declaration would merge with another one of the same kind;

@@ -1,0 +1,5 @@
+{
+  "options": { "newName": "class" },
+  "spec": ["ECMAScript §12.7.2 Keywords and Reserved Words", "ECMAScript §13.3.2 Property Accessors"],
+  "notes": "A reserved word may name a property."
+}

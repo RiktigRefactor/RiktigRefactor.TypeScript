@@ -9,7 +9,7 @@ A new code is listed in the release notes.
 |---|---|
 | `no-symbol` | There is no renameable symbol at the cursor. |
 | `not-renameable` | The symbol can't be renamed: it is declared or referenced outside the workspace, such as in the standard library or a package. |
-| `invalid-identifier` | The new name is not a valid identifier, is a reserved word, or doesn't match whether the old name is a private name (`#name`). |
+| `invalid-identifier` | The new name is not a valid identifier, is a reserved word for a symbol other than a member, or doesn't match whether the old name is a private name (`#name`). |
 | `conflicting-declaration` | The new name collides with an existing declaration, or with a member of a base or derived type, which the renamed member would override or be overridden by. |
 | `would-introduce-errors` | The change would introduce compile errors that are not a declaration conflict. |
 | `binding-would-change` | After the rename, a reference would bind to a different symbol, such as when a name is captured, or a declaration would merge with another of the same meaning. |

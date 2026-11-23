@@ -78,7 +78,7 @@ export function rename(workspace: Workspace, request: RenameRequest): Result {
     const oldName = identifier.text;
     const newName = request.newName;
     const isMember = (symbol.flags & memberFlags) !== 0;
-    const invalidNameReason = findInvalidNameReason(oldName, newName);
+    const invalidNameReason = findInvalidNameReason(oldName, newName, isMember);
     if (invalidNameReason) return refuse(workspace, "invalid-identifier", invalidNameReason, identifierSite);
 
     const renameInfo = service.getRenameInfo(fileName, identifierSite.start, { allowRenameOfImportPath: false });
@@ -201,14 +201,14 @@ export function rename(workspace: Workspace, request: RenameRequest): Result {
 const duplicateDeclarationCodes = new Set([2300, 2393, 2440, 2451, 2567, 2718]);
 
 /** Reserved words may name members (`box.class`); compile errors catch a member also declared as a parameter. */
-function findInvalidNameReason(oldName: string, newName: string): string | undefined {
+function findInvalidNameReason(oldName: string, newName: string, isMember: boolean): string | undefined {
     const isPrivateName = oldName.startsWith("#");
     if (isPrivateName !== newName.startsWith("#")) {
         return `\`${oldName}\` is ${isPrivateName ? "" : "not "}a private name, so the new name must ${isPrivateName ? "" : "not "}start with \`#\`.`;
     }
     const bareName = isPrivateName ? newName.slice(1) : newName;
     if (!isValidIdentifierText(bareName)) return `\`${newName}\` is not a valid identifier.`;
-    if (!isPrivateName && isReservedWord(newName)) return `\`${newName}\` is a reserved word.`;
+    if (!isPrivateName && !isMember && isReservedWord(newName)) return `\`${newName}\` is a reserved word.`;
     return undefined;
 }
 
