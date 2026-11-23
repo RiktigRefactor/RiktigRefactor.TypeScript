@@ -1,4 +1,0 @@
-{
-  "spec": ["ECMAScript §15.2 Function Definitions"],
-  "notes": "A function declared and used only inside the selection moves into the arrow function."
-}

@@ -43,14 +43,6 @@ interface Parameter {
     isWrittenInSelection: boolean;
 }
 
-/** A variable the selected statements declare and later code uses, which the function returns. */
-interface EscapingDeclaration {
-    symbol: ts.Symbol;
-    name: string;
-    typeText: string;
-    isConst: boolean;
-}
-
 export interface ExtractIifeOptions {
     /**
      * Skips every precondition, the write-back of assigned variables, and the verification.
@@ -256,9 +248,8 @@ class ExtractionAnalysis {
             this.checkNoDirectEval();
         }
         const parameters = this.findParameters(selectedNodes, selection.kind);
-        const escaping = this.findEscapingDeclarations(selection);
-        if (!this.naive) this.checkOutputsCombine(parameters, escaping);
-        return this.buildPlan(selection, selectedNodes, parameters, escaping);
+        if (!this.naive) this.checkDeclarationsStayInside(selection);
+        return this.buildPlan(selection, selectedNodes, parameters);
     }
 
     private isInSelection(node: ts.Node): boolean {
@@ -684,15 +675,14 @@ class ExtractionAnalysis {
         return text;
     }
 
-    private findEscapingDeclarations(selection: Selection): EscapingDeclaration[] {
-        if (selection.kind === "expression") return [];
-        const escaping: EscapingDeclaration[] = [];
+    /**
+     * `var` and function declarations are hoisted to the enclosing function, and a `let`, `const` or class used after
+     * the selection would need its temporal dead zone and constness kept, so the specification refuses both.
+     */
+    private checkDeclarationsStayInside(selection: Selection) {
+        if (selection.kind === "expression") return;
         for (const statement of selection.statements) {
-            if (
-                !this.naive &&
-                ts.isVariableStatement(statement) &&
-                statement.declarationList.flags & ts.NodeFlags.Using
-            ) {
+            if (ts.isVariableStatement(statement) && statement.declarationList.flags & ts.NodeFlags.Using) {
                 throw new Refusal(
                     "declaration-escapes",
                     "A `using` declaration would be disposed when the arrow function returns instead of at the end of its block.",
@@ -702,72 +692,33 @@ class ExtractionAnalysis {
         }
         const declaredSymbols = new Set<ts.Symbol>();
         for (const statement of selection.statements) {
-            forEachDescendant(statement, (node) => {
+            const visit = (node: ts.Node, insideFunction: boolean) => {
+                if (!insideFunction && isHoistedDeclaration(node)) {
+                    throw new Refusal(
+                        "hoisted-declaration",
+                        "The selection declares a `var` or a function, which is hoisted to the enclosing function.",
+                        node,
+                    );
+                }
                 const name = (node as ts.NamedDeclaration).name;
-                if (name && ts.isIdentifier(name) && name.parent === node && isDeclarationNode(node)) {
+                if (name && ts.isIdentifier(name) && isDeclarationNode(node)) {
                     const symbol = this.checker.getSymbolAtLocation(name);
                     if (symbol) declaredSymbols.add(symbol);
                 }
-            });
-            if (isDeclarationNode(statement)) {
-                const name = (statement as unknown as ts.NamedDeclaration).name;
-                const symbol = name && this.checker.getSymbolAtLocation(name);
-                if (symbol) declaredSymbols.add(symbol);
-            }
+                ts.forEachChild(node, (child) => visit(child, insideFunction || isRuntimeFunction(node)));
+            };
+            visit(statement, false);
         }
-        if (this.naive) return [];
         for (const symbol of declaredSymbols) {
-            const outside = this.occurrencesOrTypeReferencesOf(symbol).filter(
-                (occurrence) => !this.isInSelection(occurrence),
-            );
-            if (outside.length === 0) continue;
-            const declaration = symbol.valueDeclaration ?? symbol.declarations![0];
-            const list = findAncestor(declaration, ts.isVariableDeclarationList);
-            const statement = list?.parent;
-            const isTopLevelLetOrConst =
-                list !== undefined &&
-                (list.flags & ts.NodeFlags.BlockScoped) !== 0 &&
-                ts.isVariableStatement(statement!) &&
-                selection.statements.includes(statement);
-            const isAllAfter = outside.every((occurrence) => occurrence.getStart(this.sourceFile) >= this.end);
-            if (
-                !isTopLevelLetOrConst ||
-                !isAllAfter ||
-                (ts.isSourceFile(statement!.parent) && !ts.isExternalModule(this.sourceFile))
-            ) {
+            const outside = this.occurrencesOf(symbol).filter((occurrence) => !this.isInSelection(occurrence));
+            if (outside.length > 0) {
                 throw new Refusal(
                     "declaration-escapes",
-                    `\`${symbol.name}\` is declared in the selection and used outside it in a way the call can't return.`,
+                    `\`${symbol.name}\` is declared in the selection and used after it.`,
                     outside[0],
+                    "Move the declaration out of the selection, or extend the selection to include its uses.",
                 );
             }
-            this.checkNotCapturedAndMutable(symbol);
-            escaping.push({
-                symbol,
-                name: symbol.name,
-                typeText: this.typeText(this.checker.getTypeOfSymbol(symbol), declaration),
-                isConst: (list.flags & ts.NodeFlags.Const) !== 0,
-            });
-        }
-        return escaping;
-    }
-
-    private occurrencesOrTypeReferencesOf(symbol: ts.Symbol): ts.Identifier[] {
-        const occurrences: ts.Identifier[] = [];
-        forEachDescendant(this.sourceFile, (node) => {
-            if (!ts.isIdentifier(node)) return;
-            const bound = symbolsBoundBy(this.checker, node);
-            if (bound.includes(symbol)) occurrences.push(node);
-        });
-        return occurrences;
-    }
-
-    private checkOutputsCombine(parameters: Parameter[], escaping: EscapingDeclaration[]) {
-        if (escaping.length > 0 && parameters.some((parameter) => parameter.isWrittenInSelection)) {
-            throw new Refusal(
-                "declaration-escapes",
-                "The selection both declares variables used after it and assigns variables declared before it; the call can't both declare and assign.",
-            );
         }
     }
 
@@ -775,21 +726,16 @@ class ExtractionAnalysis {
         selection: Selection,
         selectedNodes: readonly ts.Node[],
         parameters: Parameter[],
-        escaping: EscapingDeclaration[],
     ): ExtractionPlan {
         const fileName = this.sourceFile.fileName;
-        const written = parameters.filter((parameter) => parameter.isWrittenInSelection);
-        const outputs: { name: string; typeText: string }[] = this.naive ? [] : [...written, ...escaping];
+        const outputs = this.naive ? [] : parameters.filter((parameter) => parameter.isWrittenInSelection);
         const needsSemicolon = !this.naive && this.startsStatementAfterUnterminatedLine(selectedNodes[0]);
+        const outputNames = outputs.map((output) => output.name).join(", ");
 
         let callPrefix = "";
-        if (written.length > 0 && !this.naive) callPrefix = `[${written.map((output) => output.name).join(", ")}] = `;
-        if (escaping.length > 0) {
-            const keyword = escaping.every((declaration) => declaration.isConst) ? "const" : "let";
-            callPrefix = `${keyword} [${escaping.map((output) => output.name).join(", ")}] = `;
-        }
-        if (needsSemicolon && !callPrefix.startsWith("const") && !callPrefix.startsWith("let"))
-            callPrefix = ";" + callPrefix;
+        const callSuffix = "";
+        if (outputs.length > 0) callPrefix = `[${outputNames}] = `;
+        if (needsSemicolon) callPrefix = ";" + callPrefix;
 
         const parameterList = parameters.map((parameter) => `${parameter.name}: ${parameter.typeText}`).join(", ");
         const argumentList = parameters.map((parameter) => parameter.name).join(", ");
@@ -817,11 +763,8 @@ class ExtractionAnalysis {
             const indentation = this.lineIndentation(this.start);
             const unit = indentation.includes("\t") ? "\t" : "    ";
             header = `${callPrefix}((${parameterList}): ${returnTypeText} => {\n${indentation}${unit}`;
-            const returnStatement =
-                outputs.length > 0
-                    ? `\n${indentation}${unit}return [${outputs.map((output) => output.name).join(", ")}];`
-                    : "";
-            footer = `${returnStatement}\n${indentation}})(${argumentList});`;
+            const returnStatement = outputs.length > 0 ? `\n${indentation}${unit}return [${outputNames}];` : "";
+            footer = `${returnStatement}\n${indentation}})(${argumentList})${callSuffix};`;
             edits.push({ fileName, start: this.start, end: this.start, newText: header });
             for (const lineStart of this.indentableLineStarts()) {
                 edits.push({ fileName, start: lineStart, end: lineStart, newText: unit });
@@ -837,14 +780,6 @@ class ExtractionAnalysis {
             for (const parameter of parameters) {
                 parameterOffsetsInHeader.set(parameter.symbol, offset);
                 offset += `${parameter.name}: ${parameter.typeText}, `.length;
-            }
-        }
-        const escapingOffsetsInHeader = new Map<ts.Symbol, number>();
-        {
-            let offset = headerText.indexOf("[") + 1;
-            for (const declaration of escaping) {
-                escapingOffsetsInHeader.set(declaration.symbol, offset);
-                offset += `${declaration.name}, `.length;
             }
         }
         const start = this.start;
@@ -864,8 +799,6 @@ class ExtractionAnalysis {
                 const footerStart = editMap.oldToNew(fileName, end) - footerText.length;
                 const parameterKey = (symbol: ts.Symbol) =>
                     `${fileName}#${headerStart + parameterOffsetsInHeader.get(symbol)!}#1`;
-                const escapingKey = (symbol: ts.Symbol) =>
-                    `${fileName}#${headerStart + escapingOffsetsInHeader.get(symbol)!}#1`;
                 const changes = findBindingChanges(
                     collectBoundOccurrences(oldProgram, oldWorkspace),
                     newProgram,
@@ -876,7 +809,6 @@ class ExtractionAnalysis {
                         if (occurrence.fileName !== fileName) return undefined;
                         const inside = isInSelection(occurrence.position);
                         if (inside && parameterOffsetsInHeader.has(symbol)) return parameterKey(symbol);
-                        if (!inside && escapingOffsetsInHeader.has(symbol)) return escapingKey(symbol);
                         return undefined;
                     },
                 );
@@ -886,7 +818,7 @@ class ExtractionAnalysis {
                 }
                 const newChecker = newProgram.getTypeChecker();
                 const newSourceFile = newProgram.getSourceFile(fileName)!;
-                const argumentsStart = footerStart + footerText.lastIndexOf("(") + 1;
+                const argumentsStart = footerStart + footerText.lastIndexOf(`(${argumentList})`) + 1;
                 let offset = argumentsStart;
                 for (const parameter of parameters) {
                     const problem = checkIdentifierBindsTo(newChecker, newSourceFile, offset, parameter, editMap);
@@ -1012,6 +944,11 @@ function isExpressionKind(node: ts.Node): boolean {
         node.kind !== ts.SyntaxKind.SuperKeyword &&
         !ts.isTemplateLiteralToken(node)
     );
+}
+
+function isHoistedDeclaration(node: ts.Node): boolean {
+    if (ts.isFunctionDeclaration(node)) return true;
+    return ts.isVariableDeclarationList(node) && (node.flags & ts.NodeFlags.BlockScoped) === 0;
 }
 
 function isDeclarationNode(node: ts.Node): boolean {

@@ -1,6 +1,8 @@
 {
-  "refuse": "declaration-escapes",
+  "refuse": "hoisted-declaration",
   "naiveShouldFail": true,
-  "spec": ["ECMAScript §15.2 Function Definitions"],
+  "spec": [
+    "ECMAScript \u00a715.2 Function Definitions"
+  ],
   "notes": "A hoisted function declared in the selection is called before it."
 }

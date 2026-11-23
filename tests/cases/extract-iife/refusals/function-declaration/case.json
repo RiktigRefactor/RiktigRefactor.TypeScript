@@ -1,0 +1,7 @@
+{
+  "refuse": "hoisted-declaration",
+  "spec": [
+    "ECMAScript \u00a715.2 Function Definitions"
+  ],
+  "notes": "A function declaration is hoisted to the enclosing function, so the specification refuses it even when only the selection uses it."
+}

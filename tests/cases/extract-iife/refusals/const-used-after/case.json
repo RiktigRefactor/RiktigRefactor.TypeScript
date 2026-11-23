@@ -1,0 +1,9 @@
+{
+  "refuse": "declaration-escapes",
+  "naiveShouldFail": true,
+  "spec": [
+    "ECMAScript \u00a714.3.1 Let and Const Declarations",
+    "ECMAScript \u00a714.3.3 Destructuring Binding Patterns"
+  ],
+  "notes": "Constants declared in the selection and used after it would need to keep const and the temporal dead zone, so the specification refuses."
+}

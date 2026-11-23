@@ -38,7 +38,7 @@ const total = ((price: number, qty: number): number => price * qty)(price, qty);
 
 Local variables of enclosing functions become parameters, annotated with the type the selection sees (narrowed where every use agrees), so the arrow function captures no local; module-level names are used directly.
 An arrow function takes `this` from the enclosing function, so `this` is used directly too.
-Statements that assign variables declared before them return those in an array that is assigned at the call site (`[a, b] = …`), and `let` or `const` declarations used only after the statements are returned and declared at the call site (`const [total] = …`).
+Statements that assign variables declared before them return those in an array that is assigned at the call site (`[a, b] = …`).
 Statement lines are indented one more level, except lines inside a string or template literal.
 Where a line would start with `(` after a line without a semicolon, the tool adds `;`.
 It refuses when it can't prove that wrapping keeps behavior, for example when:
@@ -50,6 +50,7 @@ It refuses when it can't prove that wrapping keeps behavior, for example when:
 - a variable crossing the boundary is assigned somewhere and also used by a closure, so a copy could go stale;
 - a `let` or `const` crossing the boundary might be read before it is initialized, so passing it would throw earlier;
 - inside a `try`, the statements assign a variable declared outside it, which an exception would lose;
+- the statements declare a `var` or a function (hoisted to the enclosing function), or a `let`, `const`, or class that is used after them;
 - a type it must write out can't be written, such as an anonymous class or `typeof` of a name the parameters shadow;
 - the file calls `eval` directly.
 

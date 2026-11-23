@@ -1,0 +1,8 @@
+{
+  "refuse": "declaration-escapes",
+  "naiveShouldFail": true,
+  "spec": [
+    "ECMAScript \u00a714.3.1 Let and Const Declarations"
+  ],
+  "notes": "A let declared in the selection is used after it."
+}

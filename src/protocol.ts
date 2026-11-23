@@ -70,6 +70,7 @@ export const RefusalCodes = [
     "possible-temporal-dead-zone",
     "writes-lost-on-exception",
     "declaration-escapes",
+    "hoisted-declaration",
     "type-not-nameable",
     "internal-verification-failed",
 ] as const;

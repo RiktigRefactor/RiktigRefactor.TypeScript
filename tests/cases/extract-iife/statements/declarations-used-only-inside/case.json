@@ -1,0 +1,4 @@
+{
+  "spec": ["ECMAScript §14.3.1 Let and Const Declarations"],
+  "notes": "let and const declared in the selection and used only inside it move into the arrow function."
+}

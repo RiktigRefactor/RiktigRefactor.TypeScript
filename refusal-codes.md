@@ -25,6 +25,7 @@ A new code is listed in the release notes.
 | `captured-variable` | Extract IIFE: a variable crossing the boundary is assigned somewhere and also used by a closure, so code would see a stale copy. |
 | `possible-temporal-dead-zone` | Extract IIFE: a `let`, `const`, or class crossing the boundary may be read before it is initialized; passing it as an argument would throw earlier than the original. |
 | `writes-lost-on-exception` | Extract IIFE: inside a `try`, the selection assigns a variable declared outside it; an exception would lose the assignment, because the function returns values only when it completes. |
-| `declaration-escapes` | Extract IIFE: a declaration in the selection is used outside it in a way the call can't return (anything but a `let` or `const` used only after the selection, or such declarations together with assigned outer variables), or a `using` declaration would be disposed early. |
+| `declaration-escapes` | Extract IIFE: a `let`, `const`, or class declared in the selection is used after it, or a `using` declaration would be disposed when the function returns instead of at the end of its block. |
+| `hoisted-declaration` | Extract IIFE: the selection declares a `var` or a function, which is hoisted to the enclosing function. |
 | `type-not-nameable` | Extract IIFE: a type that has to be written out as a parameter or return type annotation can't be. |
 | `internal-verification-failed` | The tool's own check of its result failed. This is a bug in the tool; please report it. |

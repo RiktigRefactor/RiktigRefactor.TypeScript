@@ -1,0 +1,5 @@
+{
+  "refuse": "hoisted-declaration",
+  "spec": ["ECMAScript §14.3.2 Variable Statement"],
+  "notes": "var is hoisted to the enclosing function."
+}
