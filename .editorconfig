@@ -1,0 +1,23 @@
+root = true
+
+[*]
+indent_style = space
+end_of_line = lf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+[*.{cmd,bat}]
+end_of_line = crlf
+
+[{build-and-test,tidy-code}]
+end_of_line = lf
+
+[*.{json,yml,yaml}]
+indent_size = 2
+
+[*.ts]
+indent_size = 4
+
+[*.md]
+trim_trailing_whitespace = false
