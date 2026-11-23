@@ -159,8 +159,8 @@ function isRuntimeFunction(node: ts.Node): boolean {
     return runtimeFunctionKinds.has(node.kind);
 }
 
-/** Functions that bind their own `this`, `arguments`, and `new.target`; arrow functions don't. */
-function bindsOwnThis(node: ts.Node): boolean {
+/** Functions that bind their own `arguments`, `super`, and `new.target`; arrow functions don't. */
+function bindsOwnArgumentsAndSuper(node: ts.Node): boolean {
     return isRuntimeFunction(node) && node.kind !== ts.SyntaxKind.ArrowFunction;
 }
 
@@ -404,34 +404,41 @@ class ExtractionAnalysis {
         }
     }
 
-    /** Checks `this`, `await`, `yield`, jumps, and declarations inside the selection. */
+    /** Checks `arguments`, `super`, `new.target`, `await`, `yield`, and jumps inside the selection. */
     private checkContents(selected: ts.Node) {
-        const visit = (node: ts.Node, insideFunction: boolean, insideThisBinder: boolean, jumpTargets: JumpTargets) => {
-            this.checkNode(node, insideFunction, insideThisBinder, jumpTargets);
+        const visit = (
+            node: ts.Node,
+            insideFunction: boolean,
+            insideOwnArgumentsBinder: boolean,
+            jumpTargets: JumpTargets,
+        ) => {
+            this.checkNode(node, insideFunction, insideOwnArgumentsBinder, jumpTargets);
             const nextInsideFunction = insideFunction || isRuntimeFunction(node);
-            const nextInsideThisBinder =
-                insideThisBinder || bindsOwnThis(node) || isClassFieldInitializerBoundary(node);
+            const nextInsideOwnArgumentsBinder =
+                insideOwnArgumentsBinder || bindsOwnArgumentsAndSuper(node) || isClassFieldInitializerBoundary(node);
             let nextTargets = jumpTargets;
             if (isRuntimeFunction(node)) nextTargets = { labels: [], loops: 0, switches: 0 };
             else nextTargets = jumpTargetsInside(node, jumpTargets);
-            ts.forEachChild(node, (child) => visit(child, nextInsideFunction, nextInsideThisBinder, nextTargets));
+            ts.forEachChild(node, (child) =>
+                visit(child, nextInsideFunction, nextInsideOwnArgumentsBinder, nextTargets),
+            );
         };
         visit(selected, false, false, { labels: [], loops: 0, switches: 0 });
     }
 
-    private checkNode(node: ts.Node, insideFunction: boolean, insideThisBinder: boolean, jumpTargets: JumpTargets) {
-        if (!insideThisBinder) {
+    private checkNode(
+        node: ts.Node,
+        insideFunction: boolean,
+        insideOwnArgumentsBinder: boolean,
+        jumpTargets: JumpTargets,
+    ) {
+        if (!insideOwnArgumentsBinder) {
             const isNewTarget = ts.isMetaProperty(node) && node.keywordToken === ts.SyntaxKind.NewKeyword;
             const isArguments = ts.isIdentifier(node) && node.text === "arguments" && this.isImplicitArguments(node);
-            if (
-                node.kind === ts.SyntaxKind.ThisKeyword ||
-                node.kind === ts.SyntaxKind.SuperKeyword ||
-                isNewTarget ||
-                isArguments
-            ) {
+            if (node.kind === ts.SyntaxKind.SuperKeyword || isNewTarget || isArguments) {
                 throw new Refusal(
-                    "this-or-arguments",
-                    `The selection uses \`${node.getText(this.sourceFile)}\`, which the arrow function would capture.`,
+                    "arguments-or-super",
+                    `The selection uses \`${node.getText(this.sourceFile)}\`, which the arrow function would take from the enclosing function.`,
                     node,
                 );
             }

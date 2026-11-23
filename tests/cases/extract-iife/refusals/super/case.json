@@ -1,4 +1,4 @@
 {
-  "refuse": "this-or-arguments",
+  "refuse": "arguments-or-super",
   "spec": ["ECMAScript §13.3.7 The super Keyword"]
 }

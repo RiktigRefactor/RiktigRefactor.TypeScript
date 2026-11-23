@@ -62,7 +62,7 @@ export const RefusalCodes = [
     "invalid-selection",
     "non-local-control-flow",
     "contains-await",
-    "this-or-arguments",
+    "arguments-or-super",
     "direct-eval",
     "selection-is-reference",
     "expression-writes-variable",

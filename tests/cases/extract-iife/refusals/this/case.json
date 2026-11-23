@@ -1,5 +1,0 @@
-{
-  "refuse": "this-or-arguments",
-  "spec": ["ECMAScript §13.2.1 The this Keyword", "ECMAScript §15.3 Arrow Function Definitions"],
-  "notes": "An arrow function would capture this; the generated function must capture nothing."
-}

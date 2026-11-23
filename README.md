@@ -37,13 +37,14 @@ const total = ((price: number, qty: number): number => price * qty)(price, qty);
 ```
 
 Local variables of enclosing functions become parameters, annotated with the type the selection sees (narrowed where every use agrees), so the arrow function captures no local; module-level names are used directly.
+An arrow function takes `this` from the enclosing function, so `this` is used directly too.
 Statements that assign variables declared before them return those in an array that is assigned at the call site (`[a, b] = …`), and `let` or `const` declarations used only after the statements are returned and declared at the call site (`const [total] = …`).
 Statement lines are indented one more level, except lines inside a string or template literal.
 Where a line would start with `(` after a line without a semicolon, the tool adds `;`.
 It refuses when it can't prove that wrapping keeps behavior, for example when:
 
 - the selection contains `return`, `yield`, `await`, or a `break` or `continue` whose target is outside it;
-- it uses `this`, `super`, `arguments`, or `new.target` (an arrow function would capture them);
+- it uses `arguments`, `super`, or `new.target`;
 - the expression is used as a reference: assigned to, deleted, called as a method (which would lose its `this`), or part of an optional chain;
 - the expression assigns a variable that would become a parameter;
 - a variable crossing the boundary is assigned somewhere and also used by a closure, so a copy could go stale;

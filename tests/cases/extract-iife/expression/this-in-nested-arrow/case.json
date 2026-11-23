@@ -1,0 +1,7 @@
+{
+  "spec": [
+    "ECMAScript \u00a713.2.1 The this Keyword",
+    "ECMAScript \u00a715.3 Arrow Function Definitions"
+  ],
+  "notes": "An arrow function inside the selection still sees the method's this through the new arrow function."
+}

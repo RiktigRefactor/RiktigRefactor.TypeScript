@@ -1,0 +1,7 @@
+{
+  "spec": [
+    "ECMAScript \u00a713.2.1 The this Keyword",
+    "ECMAScript \u00a715.3 Arrow Function Definitions"
+  ],
+  "notes": "An arrow function takes this from the enclosing method, so this is used directly, not passed."
+}
