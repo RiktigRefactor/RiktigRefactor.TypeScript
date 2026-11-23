@@ -1,5 +1,5 @@
 {
   "options": { "newName": "other" },
   "refuse": "no-symbol",
-  "spec": ["ES §12.7 Names and Keywords"]
+  "spec": ["ECMAScript §12.7 Names and Keywords"]
 }

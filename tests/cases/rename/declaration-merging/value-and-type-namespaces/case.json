@@ -1,5 +1,5 @@
 {
   "options": { "newName": "Unit" },
-  "spec": ["TS handbook: Declaration Merging"],
+  "spec": ["TypeScript feature: declaration merging"],
   "notes": "A type alias and a const may share a name; renaming the type leaves the const alone."
 }

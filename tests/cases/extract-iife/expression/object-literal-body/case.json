@@ -1,5 +1,5 @@
 {
   "naiveShouldFail": true,
-  "spec": ["ES §15.3 Arrow Function Definitions", "ES §13.2.5 Object Initializer"],
+  "spec": ["ECMAScript §15.3 Arrow Function Definitions", "ECMAScript §13.2.5 Object Initializer"],
   "notes": "An arrow body starting with { would be a block, so the object literal is parenthesized."
 }

@@ -1,4 +1,4 @@
 {
-  "spec": ["ES §14.9 The break Statement", "ES §14.8 The continue Statement", "ES §14.13 Labelled Statements"],
+  "spec": ["ECMAScript §14.9 The break Statement", "ECMAScript §14.8 The continue Statement", "ECMAScript §14.13 Labelled Statements"],
   "notes": "break and continue whose targets are inside the selection stay valid in the arrow function."
 }

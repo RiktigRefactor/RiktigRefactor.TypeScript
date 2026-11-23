@@ -1,6 +1,6 @@
 {
   "options": { "newName": "T" },
   "refuse": "binding-would-change",
-  "spec": ["TS handbook: Generics"],
+  "spec": ["TypeScript feature: generics"],
   "notes": "A generic function's type parameter would capture the renamed type alias. Types are erased, so only the binding check notices."
 }

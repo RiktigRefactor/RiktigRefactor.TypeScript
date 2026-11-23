@@ -2,6 +2,6 @@
   "options": { "newName": "y" },
   "refuse": "binding-would-change",
   "naiveShouldFail": true,
-  "spec": ["ES §9.1 Environment Records"],
+  "spec": ["ECMAScript §9.1 Environment Records"],
   "notes": "Renaming the inner x to y makes the reference to the outer y bind to the renamed local."
 }

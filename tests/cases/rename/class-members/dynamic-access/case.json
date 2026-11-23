@@ -2,6 +2,6 @@
   "options": { "newName": "amount" },
   "refuse": "dynamic-access-possible",
   "naiveShouldFail": true,
-  "spec": ["ES §13.3.2 Property Accessors"],
+  "spec": ["ECMAScript §13.3.2 Property Accessors"],
   "notes": "A property read through any isn't a reference the compiler can find."
 }

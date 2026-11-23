@@ -1,6 +1,6 @@
 {
   "options": { "newName": "count" },
   "naiveShouldFail": true,
-  "spec": ["ES §13.15.5 Destructuring Assignment"],
+  "spec": ["ECMAScript §13.15.5 Destructuring Assignment"],
   "notes": "A shorthand destructuring assignment target reads the property named like the variable."
 }

@@ -1,6 +1,6 @@
 {
   "options": { "newName": "amount" },
   "naiveShouldFail": true,
-  "spec": ["ES §14.3.3 Destructuring Binding Patterns"],
+  "spec": ["ECMAScript §14.3.3 Destructuring Binding Patterns"],
   "notes": "A shorthand binding pattern reads the property named like the variable; the rename writes the property name explicitly."
 }

@@ -1,5 +1,5 @@
 {
   "refuse": "contains-await",
   "naiveShouldFail": true,
-  "spec": ["ES §15.8 Async Function Definitions"]
+  "spec": ["ECMAScript §15.8 Async Function Definitions"]
 }

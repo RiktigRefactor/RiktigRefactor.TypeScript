@@ -1,5 +1,5 @@
 {
   "refuse": "non-local-control-flow",
   "naiveShouldFail": true,
-  "spec": ["ES §15.5 Generator Function Definitions"]
+  "spec": ["ECMAScript §15.5 Generator Function Definitions"]
 }

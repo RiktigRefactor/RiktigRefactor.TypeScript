@@ -1,4 +1,4 @@
 {
   "refuse": "this-or-arguments",
-  "spec": ["ES §10.4.4 Arguments Exotic Objects"]
+  "spec": ["ECMAScript §10.4.4 Arguments Exotic Objects"]
 }

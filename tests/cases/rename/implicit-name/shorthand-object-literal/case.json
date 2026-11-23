@@ -1,6 +1,6 @@
 {
   "options": { "newName": "amount" },
   "naiveShouldFail": true,
-  "spec": ["ES §13.2.5 Object Initializer"],
+  "spec": ["ECMAScript §13.2.5 Object Initializer"],
   "notes": "A shorthand property takes its key from the variable's name; the rename writes the old key explicitly."
 }

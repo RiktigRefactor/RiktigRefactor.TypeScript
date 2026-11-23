@@ -1,6 +1,6 @@
 {
   "refuse": "writes-lost-on-exception",
   "naiveShouldFail": true,
-  "spec": ["ES §14.15 The try Statement"],
+  "spec": ["ECMAScript §14.15 The try Statement"],
   "notes": "If fail() throws, the original has already assigned stage; the arrow function returns it only when it completes."
 }

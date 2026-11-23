@@ -2,5 +2,5 @@
   "options": { "newName": "1st" },
   "refuse": "invalid-identifier",
   "naiveShouldFail": true,
-  "spec": ["ES §12.7 Names and Keywords"]
+  "spec": ["ECMAScript §12.7 Names and Keywords"]
 }

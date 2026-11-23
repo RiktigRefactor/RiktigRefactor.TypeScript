@@ -1,5 +1,5 @@
 {
   "refuse": "invalid-selection",
-  "spec": ["ES §13.7 Multiplicative Operators"],
+  "spec": ["ECMAScript §13.7 Multiplicative Operators"],
   "notes": "a + b is not an expression of a + b * c."
 }

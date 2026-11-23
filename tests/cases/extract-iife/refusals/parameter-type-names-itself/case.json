@@ -1,5 +1,5 @@
 {
   "refuse": "type-not-nameable",
-  "spec": ["TS handbook: Classes"],
+  "spec": ["TypeScript feature: classes"],
   "notes": "The class expression's type can only be written as typeof Point, which inside the parameter list would name the parameter itself."
 }

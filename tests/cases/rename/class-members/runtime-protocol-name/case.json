@@ -2,6 +2,6 @@
   "options": { "newName": "format" },
   "refuse": "runtime-protocol-name",
   "naiveShouldFail": true,
-  "spec": ["ES §7.1.1 ToPrimitive"],
+  "spec": ["ECMAScript §7.1.1 ToPrimitive"],
   "notes": "Template literals call toString by name, so renaming it changes behavior without changing a binding."
 }

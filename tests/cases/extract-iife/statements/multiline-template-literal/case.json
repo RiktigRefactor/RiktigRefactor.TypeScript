@@ -1,5 +1,5 @@
 {
   "naiveShouldFail": true,
-  "spec": ["ES §13.2.8 Template Literals"],
+  "spec": ["ECMAScript §13.2.8 Template Literals"],
   "notes": "The statements are indented one level, except lines inside a template literal, whose text would change."
 }

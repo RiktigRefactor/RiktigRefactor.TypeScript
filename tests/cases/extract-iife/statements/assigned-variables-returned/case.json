@@ -1,5 +1,5 @@
 {
   "naiveShouldFail": true,
-  "spec": ["ES §15.3 Arrow Function Definitions", "ES §13.15.5 Destructuring Assignment"],
+  "spec": ["ECMAScript §15.3 Arrow Function Definitions", "ECMAScript §13.15.5 Destructuring Assignment"],
   "notes": "Variables the statements assign are returned in an array and assigned back at the call site."
 }

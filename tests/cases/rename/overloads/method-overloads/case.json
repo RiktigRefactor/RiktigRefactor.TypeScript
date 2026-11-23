@@ -1,5 +1,5 @@
 {
   "options": { "newName": "measure" },
-  "spec": ["TS handbook: More on Functions", "TS handbook: Classes"],
+  "spec": ["TypeScript feature: function overloads", "TypeScript feature: classes"],
   "notes": "Renames every overload signature of a method."
 }

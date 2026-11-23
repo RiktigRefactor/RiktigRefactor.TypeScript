@@ -1,5 +1,5 @@
 {
   "options": { "newName": "#total" },
-  "spec": ["ES §15.7 Class Definitions"],
+  "spec": ["ECMAScript §15.7 Class Definitions"],
   "notes": "Renames a private name."
 }

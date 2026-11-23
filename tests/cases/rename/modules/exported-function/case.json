@@ -1,5 +1,5 @@
 {
   "options": { "newName": "addTax" },
-  "spec": ["ES §16.2.2 Imports", "ES §16.2.3 Exports"],
+  "spec": ["ECMAScript §16.2.2 Imports", "ECMAScript §16.2.3 Exports"],
   "notes": "Renames an exported function and its import in another file."
 }

@@ -1,5 +1,5 @@
 {
   "options": { "newName": "addTax" },
-  "spec": ["ES §16.2.2 Imports"],
+  "spec": ["ECMAScript §16.2.2 Imports"],
   "notes": "Renaming an imported name in the importing file writes an alias, so the module's export keeps its name."
 }

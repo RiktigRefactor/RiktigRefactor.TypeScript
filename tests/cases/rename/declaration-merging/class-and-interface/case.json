@@ -1,5 +1,5 @@
 {
   "options": { "newName": "Account" },
-  "spec": ["TS handbook: Declaration Merging"],
+  "spec": ["TypeScript feature: declaration merging"],
   "notes": "A class merged with an interface is renamed together."
 }

@@ -1,5 +1,5 @@
 {
   "options": { "newName": "rate" },
-  "spec": ["ES §16.2.3 Exports"],
+  "spec": ["ECMAScript §16.2.3 Exports"],
   "notes": "Renaming a local exported through an export list keeps the exported name: export { taxRate } becomes export { rate as taxRate }."
 }

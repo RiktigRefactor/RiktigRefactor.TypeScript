@@ -2,6 +2,6 @@
   "options": { "newName": "y" },
   "refuse": "binding-would-change",
   "naiveShouldFail": true,
-  "spec": ["ES §9.1 Environment Records", "ES §14.2 Block"],
+  "spec": ["ECMAScript §9.1 Environment Records", "ECMAScript §14.2 Block"],
   "notes": "The inner reference to x would bind to the inner y."
 }

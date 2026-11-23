@@ -1,4 +1,4 @@
 {
   "refuse": "invalid-selection",
-  "spec": ["ES §13.3.2 Property Accessors"]
+  "spec": ["ECMAScript §13.3.2 Property Accessors"]
 }

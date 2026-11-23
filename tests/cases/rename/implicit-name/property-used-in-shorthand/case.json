@@ -1,5 +1,5 @@
 {
   "options": { "newName": "amount" },
-  "spec": ["ES §13.2.5 Object Initializer", "TS handbook: Object Types"],
+  "spec": ["ECMAScript §13.2.5 Object Initializer", "TypeScript feature: object types"],
   "notes": "Renaming the property keeps the local's name: { total } becomes { amount: total }."
 }

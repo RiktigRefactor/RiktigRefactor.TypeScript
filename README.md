@@ -116,7 +116,7 @@ Every input and expected program is type-checked with `strict` on, compiled, and
 ### Citing the language specifications
 
 TypeScript has no current language specification, and its run-time behavior is JavaScript's.
-So every test case lists, in its `spec` field, either sections of the ECMAScript specification, written as `ES §<number> <title>` and numbered as in [ECMA-262, 16th edition (ES2025)](https://262.ecma-international.org/16.0/), for example `ES §14.3.1 Let and Const Declarations`; or, for TypeScript-only features, pages of the [TypeScript handbook](https://www.typescriptlang.org/docs/handbook/intro.html), written as `TS handbook: <page title>`, for example `TS handbook: Declaration Merging`.
+Following the [specification's citation table](https://github.com/RiktigRefactor/riktigrefactor.spec/blob/main/test-format.md#citations), every test case lists, in its `spec` field, either sections of the ECMAScript specification, written as `ECMAScript §<number> <title>` and numbered as in [ECMA-262, 16th edition (ES2025)](https://262.ecma-international.org/16.0/), for example `ECMAScript §14.3.1 Let and Const Declarations`; or, for TypeScript's type-system features, the feature's name, written as `TypeScript feature: <name>`, for example `TypeScript feature: declaration merging`.
 
 ## Contributing
 

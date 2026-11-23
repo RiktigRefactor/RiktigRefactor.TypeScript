@@ -1,5 +1,5 @@
 {
   "refuse": "non-local-control-flow",
   "naiveShouldFail": true,
-  "spec": ["ES §14.8 The continue Statement", "ES §14.13 Labelled Statements"]
+  "spec": ["ECMAScript §14.8 The continue Statement", "ECMAScript §14.13 Labelled Statements"]
 }

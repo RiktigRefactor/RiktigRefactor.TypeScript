@@ -2,6 +2,6 @@
   "options": { "newName": "rate" },
   "refuse": "binding-would-change",
   "naiveShouldFail": true,
-  "spec": ["TS handbook: Namespaces"],
+  "spec": ["TypeScript feature: namespaces"],
   "notes": "A namespace's exported member would capture the renamed module-level variable."
 }
