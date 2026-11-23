@@ -1,0 +1,6 @@
+{
+  "refuse": "captured-variable",
+  "naiveShouldFail": true,
+  "spec": ["ES §9.1 Environment Records", "ES §15.3 Arrow Function Definitions"],
+  "notes": "bump() changes n while the selection runs; a parameter copy of n would not see the change."
+}

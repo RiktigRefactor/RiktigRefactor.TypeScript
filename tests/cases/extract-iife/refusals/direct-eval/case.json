@@ -1,0 +1,5 @@
+{
+  "refuse": "direct-eval",
+  "spec": ["ES §19.2.1 eval ( x )"],
+  "notes": "Direct eval reads local variables by name, which the analysis can't see."
+}

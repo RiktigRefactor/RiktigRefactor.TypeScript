@@ -1,0 +1,6 @@
+{
+  "refuse": "declaration-escapes",
+  "naiveShouldFail": true,
+  "spec": ["ES §14.3.1 Let and Const Declarations"],
+  "notes": "The selection both declares a constant used later and assigns an outer variable."
+}

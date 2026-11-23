@@ -10,6 +10,8 @@ The specification defines the correctness model, the refactorings, the JSON prot
 
 ## What it can do
 
+The tool has two refactorings: Rename and Extract IIFE.
+
 Rename renames a symbol and every reference to it across the workspace, using the TypeScript language service to find the references.
 Where a name is also an implicit key, it keeps the key: renaming `total` in `{ total }` gives `{ total: amount }`, in `const { total } = source` gives `const { total: amount } = source`, and in `export { total }` gives `export { amount as total }`.
 
@@ -23,6 +25,34 @@ It refuses when:
 - the renamed member would override, or be overridden by, a member of a related class or interface;
 - the member's old or new name is one the runtime looks up by spelling, such as `toString`, `then`, or `next`;
 - a member with the old or new name is accessed on a value of type `any` or `unknown`.
+
+Extract IIFE wraps a selected expression, or whole statements of one block, in an immediately-invoked arrow function:
+
+```ts
+// Before
+const total = price * qty;
+
+// After
+const total = ((price: number, qty: number): number => price * qty)(price, qty);
+```
+
+Local variables of enclosing functions become parameters, annotated with the type the selection sees (narrowed where every use agrees), so the arrow function captures no local; module-level names are used directly.
+Statements that assign variables declared before them return those in an array that is assigned at the call site (`[a, b] = …`), and `let` or `const` declarations used only after the statements are returned and declared at the call site (`const [total] = …`).
+Statement lines are indented one more level, except lines inside a string or template literal.
+Where a line would start with `(` after a line without a semicolon, the tool adds `;`.
+It refuses when it can't prove that wrapping keeps behavior, for example when:
+
+- the selection contains `return`, `yield`, `await`, or a `break` or `continue` whose target is outside it;
+- it uses `this`, `super`, `arguments`, or `new.target` (an arrow function would capture them);
+- the expression is used as a reference: assigned to, deleted, called as a method (which would lose its `this`), or part of an optional chain;
+- the expression assigns a variable that would become a parameter;
+- a variable crossing the boundary is assigned somewhere and also used by a closure, so a copy could go stale;
+- a `let` or `const` crossing the boundary might be read before it is initialized, so passing it would throw earlier;
+- inside a `try`, the statements assign a variable declared outside it, which an exception would lose;
+- a type it must write out can't be written, such as an anonymous class or `typeof` of a name the parameters shadow;
+- the file calls `eval` directly.
+
+After extracting, it type-checks the result and checks that every variable binds as before, with the selection's uses of locals now bound to the new parameters.
 
 Each refusal has a code, listed in [refusal-codes.md](refusal-codes.md).
 
@@ -38,10 +68,11 @@ Like C#'s `typeof(T).Name`, these observe names as text and are not detected:
 ## Library
 
 ```ts
-import { rename, Workspace } from "riktigrefactor-typescript";
+import { extractIife, rename, Workspace } from "riktigrefactor-typescript";
 
 const workspace = Workspace.fromTsconfig("tsconfig.json");
-const result = rename(workspace, { file: "src/order.ts", position: { line: 12, column: 5 }, newName: "count" });
+const renamed = rename(workspace, { file: "src/order.ts", position: { line: 12, column: 5 }, newName: "count" });
+const extracted = extractIife(workspace, { file: "src/order.ts", start: { line: 12, column: 19 }, end: { line: 12, column: 30 } });
 ```
 
 The package is not published yet.

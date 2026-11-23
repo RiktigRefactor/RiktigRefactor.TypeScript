@@ -127,9 +127,13 @@ export interface BindingChange {
     actual: string[];
 }
 
+/** Returned by an expected-key override for an occurrence whose binding needn't be checked. */
+export const unchecked = "(unchecked)";
+
 /**
  * Overrides the symbol key an original occurrence is expected to bind to after the change.
- * Returns undefined to expect the symbol's own declarations, mapped to the new positions.
+ * Returns undefined to expect the symbol's own declarations, mapped to the new positions,
+ * or `unchecked` to skip the symbol.
  */
 export type ExpectedKeyOverride = (occurrence: BoundOccurrence, symbol: ts.Symbol) => string | undefined;
 
@@ -144,6 +148,7 @@ export function findBindingChanges(
     const newKeysByOldOccurrence = new Map<string, string[]>();
     for (const occurrence of collectBoundOccurrences(newProgram, workspace)) {
         const origin = editMap.newToOld(occurrence.fileName, occurrence.position);
+        if (origin.isPureInsertion) continue;
         const id = `${occurrence.fileName}#${origin.oldPosition}`;
         const keys = newKeysByOldOccurrence.get(id) ?? [];
         for (const symbol of occurrence.symbols) keys.push(symbolKey(symbol, (_, position) => position));
@@ -154,10 +159,11 @@ export function findBindingChanges(
     const changes: BindingChange[] = [];
     for (const occurrence of oldOccurrences) {
         const actual = newKeysByOldOccurrence.get(`${occurrence.fileName}#${occurrence.position}`) ?? [];
-        const expectedKeys = occurrence.symbols.map(
-            (symbol) => expectedKeyOverride(occurrence, symbol) ?? symbolKey(symbol, mapOld),
-        );
+        const expectedKeys = occurrence.symbols
+            .map((symbol) => expectedKeyOverride(occurrence, symbol) ?? symbolKey(symbol, mapOld))
+            .filter((key) => key !== unchecked);
         if (occurrence.symbols.length === 0) expectedKeys.push("(unbound)");
+        if (expectedKeys.length === 0) continue;
         for (const expected of expectedKeys) {
             if (!actual.some((actualKey) => isSameBinding(expected, actualKey))) {
                 changes.push({

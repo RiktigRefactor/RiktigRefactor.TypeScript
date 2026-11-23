@@ -1,0 +1,5 @@
+{
+  "refuse": "type-not-nameable",
+  "spec": ["ES §15.7 Class Definitions"],
+  "notes": "The expression's type is an anonymous class, which can't be written as the return type."
+}

@@ -1,0 +1,4 @@
+{
+  "spec": ["TS handbook: Literal Types"],
+  "notes": "A const initialized with a literal keeps its literal type, so later code that needs \"on\" still compiles."
+}

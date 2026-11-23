@@ -1,0 +1,5 @@
+{
+  "naiveShouldFail": true,
+  "spec": ["ES §13.16 Comma Operator ( , )", "ES §15.3 Arrow Function Definitions"],
+  "notes": "An arrow's concise body can't hold a comma expression without parentheses."
+}

@@ -1,0 +1,6 @@
+{
+  "refuse": "possible-temporal-dead-zone",
+  "naiveShouldFail": true,
+  "spec": ["ES §14.3.1 Let and Const Declarations", "ES §15.2 Function Definitions"],
+  "notes": "read() runs before value is initialized. The original throws after pushing to the trace; reading value as an argument would throw before."
+}

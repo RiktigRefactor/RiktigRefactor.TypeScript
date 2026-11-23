@@ -3,9 +3,11 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { describe, test } from "node:test";
 import { applyProtocolEdits, positionOf } from "../src/edits.js";
+import { extractIife } from "../src/extractIife.js";
 import type { Position, Result } from "../src/protocol.js";
 import { rename } from "../src/rename.js";
 import { Workspace } from "../src/workspace.js";
+import { naiveExtractIife } from "./naive/naiveExtractIife.js";
 import { naiveRename } from "./naive/naiveRename.js";
 import { compileAndRun } from "./programRunner.js";
 
@@ -97,12 +99,17 @@ function runRefactoring(
             newName: metadata.options!.newName!,
         });
     }
+    if (refactoring === "extract-iife") {
+        return extractIife(workspace, { file: selection.file, start: selection.start, end: selection.end });
+    }
     throw new Error(`Unknown refactoring ${refactoring}`);
 }
 
 function runNaive(refactoring: string, workspace: Workspace, selection: Selection, metadata: CaseMetadata) {
     if (refactoring === "rename")
         return naiveRename(workspace, selection.file, selection.start, metadata.options!.newName!);
+    if (refactoring === "extract-iife")
+        return naiveExtractIife(workspace, selection.file, selection.start, selection.end);
     throw new Error(`Unknown refactoring ${refactoring}`);
 }
 

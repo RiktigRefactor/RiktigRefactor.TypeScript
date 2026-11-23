@@ -1,0 +1,5 @@
+{
+  "naiveShouldFail": true,
+  "spec": ["ES §13.3.5 The new Operator"],
+  "notes": "The IIFE is the operand of new, so it is parenthesized; otherwise new would apply to the arrow function."
+}

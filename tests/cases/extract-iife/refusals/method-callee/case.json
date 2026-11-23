@@ -1,0 +1,6 @@
+{
+  "refuse": "selection-is-reference",
+  "naiveShouldFail": true,
+  "spec": ["ES §13.3.6 Function Calls", "ES §13.3.2 Property Accessors"],
+  "notes": "Calling counter.increment passes counter as this; calling the IIFE's result would not."
+}

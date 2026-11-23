@@ -1,0 +1,6 @@
+{
+  "refuse": "non-local-control-flow",
+  "naiveShouldFail": true,
+  "spec": ["ES §14.10 The return Statement"],
+  "notes": "The return would return from the arrow function instead of the enclosing function."
+}

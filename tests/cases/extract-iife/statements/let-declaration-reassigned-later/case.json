@@ -1,0 +1,5 @@
+{
+  "naiveShouldFail": true,
+  "spec": ["ES §14.3.1 Let and Const Declarations"],
+  "notes": "A let declared in the statements and reassigned later is declared with let at the call site."
+}

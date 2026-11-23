@@ -1,0 +1,5 @@
+{
+  "refuse": "selection-is-reference",
+  "naiveShouldFail": true,
+  "spec": ["ES §13.15 Assignment Operators"]
+}

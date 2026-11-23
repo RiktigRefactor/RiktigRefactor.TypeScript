@@ -59,6 +59,18 @@ export const RefusalCodes = [
     "binding-would-change",
     "dynamic-access-possible",
     "runtime-protocol-name",
+    "invalid-selection",
+    "non-local-control-flow",
+    "contains-await",
+    "this-or-arguments",
+    "direct-eval",
+    "selection-is-reference",
+    "expression-writes-variable",
+    "captured-variable",
+    "possible-temporal-dead-zone",
+    "writes-lost-on-exception",
+    "declaration-escapes",
+    "type-not-nameable",
     "internal-verification-failed",
 ] as const;
 

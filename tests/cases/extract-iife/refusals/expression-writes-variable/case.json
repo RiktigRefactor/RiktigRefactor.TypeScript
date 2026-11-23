@@ -1,0 +1,6 @@
+{
+  "refuse": "expression-writes-variable",
+  "naiveShouldFail": true,
+  "spec": ["ES §13.4 Update Expressions"],
+  "notes": "x++ inside the arrow function would increment only the parameter."
+}

@@ -1,0 +1,5 @@
+{
+  "naiveShouldFail": true,
+  "spec": ["ES §14.3.1 Let and Const Declarations", "ES §14.3.3 Destructuring Binding Patterns"],
+  "notes": "Constants the statements declare and later code uses are returned and declared at the call site."
+}

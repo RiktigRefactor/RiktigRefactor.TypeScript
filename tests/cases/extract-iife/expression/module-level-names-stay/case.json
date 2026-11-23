@@ -1,0 +1,4 @@
+{
+  "spec": ["ES §16.2 Modules"],
+  "notes": "Module-level variables and functions are not locals, so they are referenced directly, not passed."
+}

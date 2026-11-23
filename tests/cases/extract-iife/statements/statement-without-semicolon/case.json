@@ -1,0 +1,5 @@
+{
+  "naiveShouldFail": true,
+  "spec": ["ES §12.10 Automatic Semicolon Insertion"],
+  "notes": "Without a semicolon, a line starting with ( would call the previous line's value; the tool starts the line with ;."
+}

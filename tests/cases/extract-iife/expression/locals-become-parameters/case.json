@@ -1,0 +1,4 @@
+{
+  "spec": ["ES §15.3 Arrow Function Definitions"],
+  "notes": "The example from the specification: locals become typed parameters."
+}

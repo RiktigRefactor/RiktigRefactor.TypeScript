@@ -1,0 +1,4 @@
+{
+  "spec": ["TS handbook: Narrowing"],
+  "notes": "The parameter takes the narrowed type the selection sees, so the body still type-checks."
+}

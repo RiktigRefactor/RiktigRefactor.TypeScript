@@ -1,0 +1,6 @@
+{
+  "refuse": "selection-is-reference",
+  "naiveShouldFail": true,
+  "spec": ["ES §13.3.9 Optional Chains"],
+  "notes": "An optional chain short-circuits the rest of the chain; an IIFE in the middle would stop it short-circuiting."
+}

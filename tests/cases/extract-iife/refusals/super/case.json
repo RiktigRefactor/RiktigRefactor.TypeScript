@@ -1,0 +1,4 @@
+{
+  "refuse": "this-or-arguments",
+  "spec": ["ES §13.3.7 The super Keyword"]
+}

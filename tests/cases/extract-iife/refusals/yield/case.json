@@ -1,0 +1,5 @@
+{
+  "refuse": "non-local-control-flow",
+  "naiveShouldFail": true,
+  "spec": ["ES §15.5 Generator Function Definitions"]
+}

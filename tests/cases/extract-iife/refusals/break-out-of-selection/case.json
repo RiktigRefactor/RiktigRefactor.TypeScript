@@ -1,0 +1,5 @@
+{
+  "refuse": "non-local-control-flow",
+  "naiveShouldFail": true,
+  "spec": ["ES §14.9 The break Statement"]
+}

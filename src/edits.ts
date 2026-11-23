@@ -13,6 +13,8 @@ export interface NewPositionOrigin {
     oldPosition: number;
     /** True when the new position lies in text an edit inserted; `oldPosition` is then that edit's start. */
     isInsertedText: boolean;
+    /** True when that edit replaced nothing, so the new text has no counterpart in the original. */
+    isPureInsertion: boolean;
 }
 
 /** Maps offsets between the original files and the files after a set of non-overlapping edits. */
@@ -72,10 +74,12 @@ export class EditMap {
             const newStart = edit.start + shift;
             const newEnd = newStart + edit.newText.length;
             if (newPosition < newStart) break;
-            if (newPosition < newEnd) return { oldPosition: edit.start, isInsertedText: true };
+            if (newPosition < newEnd) {
+                return { oldPosition: edit.start, isInsertedText: true, isPureInsertion: edit.end === edit.start };
+            }
             shift += edit.newText.length - (edit.end - edit.start);
         }
-        return { oldPosition: newPosition - shift, isInsertedText: false };
+        return { oldPosition: newPosition - shift, isInsertedText: false, isPureInsertion: false };
     }
 }
 
