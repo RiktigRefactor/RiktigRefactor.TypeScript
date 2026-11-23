@@ -1,0 +1,23 @@
+name: Build and Test
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '23 3 * * *'
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-slim, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+      - run: ./build-and-test
+        shell: bash

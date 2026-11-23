@@ -1,0 +1,28 @@
+{
+  "name": "riktigrefactor-typescript",
+  "version": "0.0.0",
+  "description": "Behavior-preserving refactorings for TypeScript",
+  "license": "MIT",
+  "private": true,
+  "type": "commonjs",
+  "main": "dist/src/index.js",
+  "bin": {
+    "riktig-ts": "dist/src/cli.js"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\" && tsc -p .",
+    "test": "node --test --test-concurrency=4 \"dist/tests/**/*.test.js\"",
+    "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\" \"tests/**/*.ts\""
+  },
+  "dependencies": {
+    "typescript": "6.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "prettier": "3.10.1"
+  }
+}
