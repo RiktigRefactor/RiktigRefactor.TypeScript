@@ -14,7 +14,7 @@ A new code is listed in the release notes.
 | `would-introduce-errors` | The change would introduce compile errors that are not a declaration conflict. |
 | `binding-would-change` | After the rename, a reference would bind to a different symbol, such as when a name is captured, or a declaration would merge with another of the same meaning. |
 | `runtime-protocol-name` | Rename: the member's old or new name is one the runtime or common libraries look up by spelling (such as `toString`, `then`, `next`, or `toJSON`). |
-| `dynamic-access-possible` | Rename: a member with the old or new name is accessed on a value of type `any` or `unknown`, which may be the renamed member. |
+| `dynamic-access-possible` | Rename: a member with the old or new name is accessed on a value of type `any` or `unknown`, which may be the renamed member, or a file the rename edits calls `eval` directly. |
 | `string-names-symbol` | Rename: a string equal to the member's old name is used where property names reach the runtime as text (the left side of `in`, a bracket access, a string literal type), or a computed key's type includes the old name. |
 | `invalid-selection` | Extract IIFE: the selection is not exactly one expression that has a value, or whole statements of one block, or it is inside an enum, a decorator, a type, a `with` statement, or an ambient declaration. |
 | `non-local-control-flow` | Extract IIFE: `return`, `break`, `continue`, `yield`, or a label would cross the boundary of the function. |

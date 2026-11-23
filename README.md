@@ -24,7 +24,7 @@ It refuses when:
 - a name would be captured or un-shadowed, or a declaration would merge with another one of the same kind;
 - the renamed member would override, or be overridden by, a member of a related class or interface;
 - the member's old or new name is one the runtime looks up by spelling, such as `toString`, `then`, or `next`;
-- a member with the old or new name is accessed on a value of type `any` or `unknown`;
+- a member with the old or new name is accessed on a value of type `any` or `unknown`, or a file the rename edits calls `eval` directly;
 - a string equal to the member's old name is used where property names reach the runtime as text: the left side of `in`, a bracket access, a string literal type, or a computed key whose type includes the old name.
 
 Extract IIFE wraps a selected expression, or whole statements of one block, in an immediately-invoked arrow function:

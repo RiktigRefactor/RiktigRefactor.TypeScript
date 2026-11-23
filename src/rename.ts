@@ -101,6 +101,15 @@ export function rename(workspace: Workspace, request: RenameRequest): Result {
         );
     }
 
+    const evalCall = findDirectEval(program, workspace, new Set(locations.map((location) => location.fileName)));
+    if (evalCall) {
+        return refuse(
+            workspace,
+            "dynamic-access-possible",
+            "A file the rename edits calls `eval` directly, which can refer to names in code the compiler can't see.",
+            evalCall,
+        );
+    }
     if (isMember && (runtimeProtocolNames.has(oldName) || runtimeProtocolNames.has(newName))) {
         return refuse(
             workspace,
@@ -395,6 +404,26 @@ function findLiteralUseOfName(
             const isBracketKey = ts.isElementAccessExpression(parent) && parent.argumentExpression === node;
             const isLiteralType = ts.isLiteralTypeNode(parent);
             if (isInOperand || isBracketKey || isLiteralType) found = siteOf(sourceFile, node);
+        });
+        if (found) return found;
+    }
+    return undefined;
+}
+
+function findDirectEval(program: ts.Program, workspace: Workspace, fileNames: ReadonlySet<string>) {
+    for (const fileName of fileNames) {
+        const sourceFile = program.getSourceFile(fileName);
+        if (!sourceFile || !workspace.files.has(fileName)) continue;
+        let found: ReturnType<typeof siteOf> | undefined;
+        forEachDescendant(sourceFile, (node) => {
+            if (
+                !found &&
+                ts.isCallExpression(node) &&
+                ts.isIdentifier(node.expression) &&
+                node.expression.text === "eval"
+            ) {
+                found = siteOf(sourceFile, node);
+            }
         });
         if (found) return found;
     }

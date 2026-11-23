@@ -1,0 +1,7 @@
+{
+  "options": { "newName": "amount" },
+  "refuse": "dynamic-access-possible",
+  "naiveShouldFail": true,
+  "spec": ["ECMAScript §19.2.1 eval ( x )"],
+  "notes": "Direct eval refers to the local by the text of its name."
+}
