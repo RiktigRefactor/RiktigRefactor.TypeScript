@@ -1,0 +1,4 @@
+{
+  "spec": ["ECMAScript §15.7 Class Definitions", "ECMAScript §13.2.1 The this Keyword"],
+  "notes": "The example from the specification; this becomes the order parameter, and calls pass the receiver first."
+}

@@ -30,4 +30,14 @@ A new code is listed in the release notes.
 | `hoisted-declaration` | Extract IIFE: the selection declares a `var` or a function, which is hoisted to the enclosing function. |
 | `type-not-nameable` | Extract IIFE: a type that has to be written out as a parameter or return type annotation can't be. |
 | `type-would-change` | Extract IIFE: the call that replaces the expression would have a different type than the expression had. |
+| `option-not-supported` | An option value the tool does not support yet, such as Make method static's `pass: "members"`. |
+| `not-an-instance-method` | Make method static: the symbol is not an instance method with a body in a named class, or has decorators or overload signatures. |
+| `dynamic-dispatch` | Make method static: a related class or interface, or any interface or object type, has a member with the method's name, or the method is abstract, overrides another, or is called through `super`. |
+| `generic-class` | Make method static: the class has type parameters, which a static method can't use. |
+| `receiver-may-be-null` | A call's receiver can't be proved non-null, and a null receiver would fail at a different point after the change. |
+| `class-name-not-in-scope` | The class's name doesn't refer to the class at a call site that would need it. |
+| `method-used-as-value` | The method is referenced other than by a plain call, such as a method reference or an optional call. |
+| `super-in-body` | Make method static: the method uses `super`. |
+| `this-type` | Make method static: the method uses `this` as a type. |
+| `arguments-in-body` | The method uses `arguments`, whose contents would change. |
 | `internal-verification-failed` | The tool's own check of its result failed. This is a bug in the tool; please report it. |

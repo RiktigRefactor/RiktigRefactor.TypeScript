@@ -1,0 +1,4 @@
+{
+  "refuse": "not-an-instance-method",
+  "spec": ["ECMAScript §15.7 Class Definitions"]
+}

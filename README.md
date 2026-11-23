@@ -10,7 +10,7 @@ The specification defines the correctness model, the refactorings, the JSON prot
 
 ## What it can do
 
-The tool has two refactorings: Rename and Extract IIFE.
+The tool has these refactorings: Rename, Extract IIFE, and Make method static.
 
 Rename renames a symbol and every reference to it across the workspace, using the TypeScript language service to find the references.
 Where a name is also an implicit key, it keeps the key: renaming `total` in `{ total }` gives `{ total: amount }`, in `const { total } = source` gives `const { total: amount } = source`, and in `export { total }` gives `export { amount as total }`.
@@ -68,6 +68,19 @@ Like C#'s `typeof(T).Name`, these observe names as text and are not detected:
 - the reverse mapping of a numeric `enum`;
 - values that reach a renamed property's type without the compiler seeing it, such as through `as` assertions or `JSON.parse`.
 
+Make method static turns an instance method into a static method of its class: the receiver becomes the first parameter (named after the class in camelCase, or `--receiver-name`), `this` in the method (including in arrow functions) becomes that parameter, and every call `recv.total(3)` becomes `Order.total(recv, 3)`.
+It refuses when:
+
+- a related class or interface (a base, a subclass, or any interface or object type) has a member with the method's name, or the method is abstract, overrides another, or is called through `super`;
+- the method is used other than by a plain call: a method reference, an optional call, a bracket access, or through `any`, `unknown`, or the class's `prototype`;
+- a call's receiver can't be proved non-null (`this`, a `new` expression, a literal, or a `const` holding one), since a null receiver fails at a different point after the change;
+- the body uses `super`, `this` as a type, or `arguments`;
+- the class is generic, or the method has decorators or overload signatures;
+- the class name doesn't name the class at a call site;
+- `pass: "members"` is asked for; only passing the receiver is supported.
+
+After the change it type-checks the result and re-binds every identifier, so a receiver name that would capture another name is refused.
+
 ## Command line
 
 The package is not published yet; from a clone, build it with `./build-and-test` and run `node dist/src/cli.js` in place of `riktig-ts`.
@@ -89,6 +102,12 @@ The workspace is the set of files a `tsconfig.json` includes.
 
 - `--apply` writes the changes to disk.
 - `--json` prints the result using the shared protocol, without the diff.
+
+Make a method static, with the cursor on its name:
+
+```shell
+riktig-ts make-method-static --workspace tsconfig.json --file src/order.ts --at 12:5 [--receiver-name order]
+```
 
 The exit code is 0 on success, 1 when the refactoring is refused, and 2 on an error such as an unknown file.
 

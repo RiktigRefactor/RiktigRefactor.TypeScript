@@ -74,6 +74,16 @@ export const RefusalCodes = [
     "hoisted-declaration",
     "type-not-nameable",
     "type-would-change",
+    "option-not-supported",
+    "not-an-instance-method",
+    "dynamic-dispatch",
+    "generic-class",
+    "receiver-may-be-null",
+    "class-name-not-in-scope",
+    "method-used-as-value",
+    "super-in-body",
+    "this-type",
+    "arguments-in-body",
     "internal-verification-failed",
 ] as const;
 

@@ -1,0 +1,4 @@
+{
+  "options": { "receiverName": "self" },
+  "spec": ["ECMAScript §15.7 Class Definitions"]
+}

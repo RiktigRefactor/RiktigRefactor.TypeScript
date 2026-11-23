@@ -1,0 +1,4 @@
+{
+  "refuse": "this-type",
+  "spec": ["TypeScript feature: polymorphic this types"]
+}

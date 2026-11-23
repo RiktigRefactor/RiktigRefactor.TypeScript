@@ -1,0 +1,6 @@
+{
+  "refuse": "arguments-in-body",
+  "naiveShouldFail": true,
+  "spec": ["ECMAScript §10.4.4 Arguments Exotic Objects"],
+  "notes": "arguments.length would count the new receiver parameter."
+}

@@ -1,0 +1,6 @@
+{
+  "refuse": "dynamic-dispatch",
+  "naiveShouldFail": true,
+  "spec": ["ECMAScript §15.7 Class Definitions", "TypeScript feature: classes"],
+  "notes": "A subclass overrides the method, so a call through the base type dispatches to it."
+}

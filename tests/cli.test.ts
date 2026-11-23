@@ -97,3 +97,15 @@ test("a usage error exits with 2", () => {
     assert.equal(result.exitCode, 2);
     assert.match(result.err, /--workspace is required/);
 });
+
+test("make-method-static prints a diff", () => {
+    const project = createProject();
+    fs.writeFileSync(
+        path.join(project, "src", "order.ts"),
+        "export class Order {\n    price = 2;\n    total(qty: number) {\n        return this.price * qty;\n    }\n}\n",
+    );
+    const workspace = path.join(project, "tsconfig.json");
+    const result = run(["make-method-static", "--workspace", workspace, "--file", "src/order.ts", "--at", "3:5"]);
+    assert.equal(result.exitCode, 0, result.err);
+    assert.match(result.out, /^\+    static total\(order: Order, qty: number\) \{$/m);
+});

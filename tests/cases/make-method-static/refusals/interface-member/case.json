@@ -1,0 +1,6 @@
+{
+  "refuse": "dynamic-dispatch",
+  "naiveShouldFail": true,
+  "spec": ["TypeScript feature: structural typing"],
+  "notes": "An instance assigned to an interface with an optional member of the same name would silently lose the method."
+}

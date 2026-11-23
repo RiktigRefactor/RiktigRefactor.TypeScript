@@ -4,6 +4,7 @@ import * as path from "node:path";
 import { describe, test } from "node:test";
 import { applyProtocolEdits, positionOf } from "../src/edits.js";
 import { extractIife } from "../src/extractIife.js";
+import { makeMethodStatic } from "../src/makeMethodStatic.js";
 import type { Position, Result } from "../src/protocol.js";
 import { rename } from "../src/rename.js";
 import { Workspace } from "../src/workspace.js";
@@ -16,7 +17,7 @@ const casesRoot = path.join(repositoryRoot, "tests", "cases");
 const writeExpected = process.env.RIKTIG_WRITE_EXPECTED === "1";
 
 interface CaseMetadata {
-    options?: { newName?: string };
+    options?: { newName?: string; [option: string]: unknown };
     refuse?: string;
     naiveShouldFail?: boolean;
     warnings?: string[];
@@ -86,6 +87,17 @@ function removeMarkers(files: Map<string, string>): { files: Map<string, string>
     return { files: unmarked, selection };
 }
 
+type CursorRefactoring = (
+    workspace: Workspace,
+    request: { file: string; position: Position; [option: string]: unknown },
+    options?: { naive?: boolean },
+) => Result;
+
+/** Refactorings that take a cursor and options, with a `naive` option the edge cases run against. */
+const cursorRefactorings: Record<string, CursorRefactoring> = {
+    "make-method-static": makeMethodStatic as CursorRefactoring,
+};
+
 function runRefactoring(
     refactoring: string,
     workspace: Workspace,
@@ -102,7 +114,9 @@ function runRefactoring(
     if (refactoring === "extract-iife") {
         return extractIife(workspace, { file: selection.file, start: selection.start, end: selection.end });
     }
-    throw new Error(`Unknown refactoring ${refactoring}`);
+    const cursorRefactoring = cursorRefactorings[refactoring];
+    if (!cursorRefactoring) throw new Error(`Unknown refactoring ${refactoring}`);
+    return cursorRefactoring(workspace, { file: selection.file, position: selection.start, ...metadata.options });
 }
 
 function runNaive(refactoring: string, workspace: Workspace, selection: Selection, metadata: CaseMetadata) {
@@ -110,7 +124,13 @@ function runNaive(refactoring: string, workspace: Workspace, selection: Selectio
         return naiveRename(workspace, selection.file, selection.start, metadata.options!.newName!);
     if (refactoring === "extract-iife")
         return naiveExtractIife(workspace, selection.file, selection.start, selection.end);
-    throw new Error(`Unknown refactoring ${refactoring}`);
+    const request = { file: selection.file, position: selection.start, ...metadata.options };
+    return applyNaive(workspace, cursorRefactorings[refactoring](workspace, request, { naive: true }));
+}
+
+function applyNaive(workspace: Workspace, result: Result): Map<string, string> {
+    if (result.status !== "success") return new Map();
+    return applyProtocolEdits(workspace, result.edits);
 }
 
 function describeResult(result: Result) {

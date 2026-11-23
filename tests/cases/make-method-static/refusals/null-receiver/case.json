@@ -1,0 +1,6 @@
+{
+  "refuse": "receiver-may-be-null",
+  "naiveShouldFail": true,
+  "spec": ["ECMAScript §13.3.6 Function Calls"],
+  "notes": "With an undefined receiver, the original fails before evaluating the argument; the static call would run it first."
+}

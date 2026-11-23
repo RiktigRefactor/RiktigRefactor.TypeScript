@@ -1,0 +1,4 @@
+{
+  "spec": ["ECMAScript §13.2.1 The this Keyword", "ECMAScript §15.3 Arrow Function Definitions"],
+  "notes": "this inside an arrow function is the receiver and is rewritten; this inside a nested function expression is that function's own and stays."
+}

@@ -1,0 +1,5 @@
+{
+  "refuse": "method-used-as-value",
+  "spec": ["ECMAScript §13.3.2 Property Accessors"],
+  "notes": "A method reference would need converting to a function, which changes when the receiver is evaluated."
+}

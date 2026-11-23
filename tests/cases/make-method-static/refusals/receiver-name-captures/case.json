@@ -1,0 +1,6 @@
+{
+  "refuse": "binding-would-change",
+  "naiveShouldFail": true,
+  "spec": ["ECMAScript §9.1 Environment Records"],
+  "notes": "The body uses a module-level `order`, which the new receiver parameter would capture."
+}
