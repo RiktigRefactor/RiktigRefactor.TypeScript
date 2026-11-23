@@ -65,6 +65,30 @@ Like C#'s `typeof(T).Name`, these observe names as text and are not detected:
 - the reverse mapping of a numeric `enum`;
 - values that reach a renamed property's type without the compiler seeing it, such as through `as` assertions or `JSON.parse`.
 
+## Command line
+
+The package is not published yet; from a clone, build it with `./build-and-test` and run `node dist/src/cli.js` in place of `riktig-ts`.
+
+Preview a rename as a diff:
+
+```shell
+riktig-ts rename --workspace tsconfig.json --file src/order.ts --at 12:5 --new-name count
+```
+
+Preview an Extract IIFE of the text from line 12, column 19 up to (not including) column 30:
+
+```shell
+riktig-ts extract-iife --workspace tsconfig.json --file src/order.ts --from 12:19 --to 12:30
+```
+
+Positions are 1-based, and columns count Unicode scalar values.
+The workspace is the set of files a `tsconfig.json` includes.
+
+- `--apply` writes the changes to disk.
+- `--json` prints the result using the shared protocol, without the diff.
+
+The exit code is 0 on success, 1 when the refactoring is refused, and 2 on an error such as an unknown file.
+
 ## Library
 
 ```ts
