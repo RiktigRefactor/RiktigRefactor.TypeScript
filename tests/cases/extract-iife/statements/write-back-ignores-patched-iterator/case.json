@@ -1,0 +1,4 @@
+{
+  "spec": ["ECMAScript §13.15.5 Destructuring Assignment", "ECMAScript §23.1.5.1 CreateArrayIterator"],
+  "notes": "Writes come back through object destructuring, which doesn't call the array iterator that this program patches."
+}

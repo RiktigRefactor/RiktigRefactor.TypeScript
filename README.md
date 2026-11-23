@@ -38,7 +38,7 @@ const total = ((price: number, qty: number): number => price * qty)(price, qty);
 
 Local variables of enclosing functions become parameters, annotated with the type the selection sees (narrowed where every use agrees), so the arrow function captures no local; module-level names are used directly.
 An arrow function takes `this` from the enclosing function, so `this` is used directly too.
-Statements that assign variables declared before them return those in an array that is assigned at the call site (`[a, b] = …`).
+Statements that assign variables declared before them return those in an object that is assigned back at the call site (`({ a, b } = …)`); object destructuring, unlike array destructuring, doesn't run the iterator protocol.
 Statement lines are indented one more level, except lines inside a string or template literal.
 Where a line would start with `(` after a line without a semicolon, the tool adds `;`.
 It refuses when it can't prove that wrapping keeps behavior, for example when:

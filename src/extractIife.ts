@@ -732,9 +732,13 @@ class ExtractionAnalysis {
         const needsSemicolon = !this.naive && this.startsStatementAfterUnterminatedLine(selectedNodes[0]);
         const outputNames = outputs.map((output) => output.name).join(", ");
 
+        // Object destructuring, unlike array destructuring, doesn't run the iterator protocol.
         let callPrefix = "";
-        const callSuffix = "";
-        if (outputs.length > 0) callPrefix = `[${outputNames}] = `;
+        let callSuffix = "";
+        if (outputs.length > 0) {
+            callPrefix = `({ ${outputNames} } = `;
+            callSuffix = ")";
+        }
         if (needsSemicolon) callPrefix = ";" + callPrefix;
 
         const parameterList = parameters.map((parameter) => `${parameter.name}: ${parameter.typeText}`).join(", ");
@@ -742,7 +746,7 @@ class ExtractionAnalysis {
         let returnTypeText: string;
         if (selection.kind === "expression") returnTypeText = this.expressionReturnTypeText(selection.expression);
         else if (outputs.length === 0) returnTypeText = "void";
-        else returnTypeText = `[${outputs.map((output) => output.typeText).join(", ")}]`;
+        else returnTypeText = `{ ${outputs.map((output) => `${output.name}: ${output.typeText}`).join("; ")} }`;
 
         const edits: TextEdit[] = [];
         let header: string;
@@ -763,7 +767,7 @@ class ExtractionAnalysis {
             const indentation = this.lineIndentation(this.start);
             const unit = indentation.includes("\t") ? "\t" : "    ";
             header = `${callPrefix}((${parameterList}): ${returnTypeText} => {\n${indentation}${unit}`;
-            const returnStatement = outputs.length > 0 ? `\n${indentation}${unit}return [${outputNames}];` : "";
+            const returnStatement = outputs.length > 0 ? `\n${indentation}${unit}return { ${outputNames} };` : "";
             footer = `${returnStatement}\n${indentation}})(${argumentList})${callSuffix};`;
             edits.push({ fileName, start: this.start, end: this.start, newText: header });
             for (const lineStart of this.indentableLineStarts()) {
