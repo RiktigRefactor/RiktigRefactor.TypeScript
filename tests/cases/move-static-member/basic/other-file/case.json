@@ -1,0 +1,5 @@
+{
+  "options": { "target": "pricing.ts#Pricing" },
+  "spec": ["ECMAScript §16.2.2 Imports", "ECMAScript §15.7 Class Definitions"],
+  "notes": "Moves a static field to a class in another file that every reference already imports."
+}

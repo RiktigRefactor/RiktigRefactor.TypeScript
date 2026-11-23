@@ -10,7 +10,7 @@ The specification defines the correctness model, the refactorings, the JSON prot
 
 ## What it can do
 
-The tool has these refactorings: Rename, Extract IIFE, and Make method static.
+The tool has these refactorings: Rename, Extract IIFE, Make method static, and Move static member.
 
 Rename renames a symbol and every reference to it across the workspace, using the TypeScript language service to find the references.
 Where a name is also an implicit key, it keeps the key: renaming `total` in `{ total }` gives `{ total: amount }`, in `const { total } = source` gives `const { total: amount } = source`, and in `export { total }` gives `export { amount as total }`.
@@ -81,6 +81,20 @@ It refuses when:
 
 After the change it type-checks the result and re-binds every identifier, so a receiver name that would capture another name is refused.
 
+Move static member moves a static method or field of a class to another class (`--target src/pricing.ts#Pricing`), in the same file or another, and rewrites every `Source.member` to `Target.member`.
+The member goes first in the target class, with its leading comments.
+Moving module-level functions and constants, or moving to a module, is not supported yet.
+It refuses when:
+
+- the member uses `this` or `super` (the class it was called through, which may be a subclass);
+- the target or a class related to it has a member with the same name;
+- a field's initializer is not a literal, or the target class has static initialization that is not;
+- a reference is not written `ClassName.member` (a variable of constructor type, destructuring), or reaches a field through a subclass;
+- a reference runs while modules or classes are being defined (outside any function), when the target may not be defined yet;
+- the target class's name doesn't refer to it at a reference, which would need a new import;
+- a file's import of the source module would be left unused, so the compiler would drop it and the module would stop running there;
+- the moved code would not compile at the target, or a name in it would refer to something else there.
+
 ## Command line
 
 The package is not published yet; from a clone, build it with `./build-and-test` and run `node dist/src/cli.js` in place of `riktig-ts`.
@@ -107,6 +121,12 @@ Make a method static, with the cursor on its name:
 
 ```shell
 riktig-ts make-method-static --workspace tsconfig.json --file src/order.ts --at 12:5 [--receiver-name order]
+```
+
+Move a static member, with the cursor on its name:
+
+```shell
+riktig-ts move-static-member --workspace tsconfig.json --file src/order.ts --at 12:12 --target src/pricing.ts#Pricing
 ```
 
 The exit code is 0 on success, 1 when the refactoring is refused, and 2 on an error such as an unknown file.

@@ -84,6 +84,14 @@ export const RefusalCodes = [
     "super-in-body",
     "this-type",
     "arguments-in-body",
+    "not-movable",
+    "target-not-found",
+    "initialization-order",
+    "target-not-in-scope",
+    "reference-not-through-class",
+    "import-would-be-removed",
+    "initializer-has-effects",
+    "this-in-static-member",
     "internal-verification-failed",
 ] as const;
 

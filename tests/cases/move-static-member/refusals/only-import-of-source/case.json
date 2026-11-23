@@ -1,0 +1,7 @@
+{
+  "options": { "target": "pricing.ts#Pricing" },
+  "refuse": "import-would-be-removed",
+  "naiveShouldFail": true,
+  "spec": ["ECMAScript §16.2.1.5 Abstract Module Records"],
+  "notes": "main.ts imports order.ts only for the moved member; after the move the compiler would drop that import, and order.ts's top-level code would not run."
+}

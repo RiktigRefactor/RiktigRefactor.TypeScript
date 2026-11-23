@@ -1,0 +1,7 @@
+{
+  "options": { "target": "main.ts#Pricing" },
+  "refuse": "initialization-order",
+  "naiveShouldFail": true,
+  "spec": ["ECMAScript §14.3.1 Let and Const Declarations", "ECMAScript §15.7 Class Definitions"],
+  "notes": "The reference runs before the target class is defined, which would throw."
+}

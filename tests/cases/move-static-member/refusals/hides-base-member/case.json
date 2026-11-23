@@ -1,0 +1,7 @@
+{
+  "options": { "target": "main.ts#Special" },
+  "refuse": "conflicting-declaration",
+  "naiveShouldFail": true,
+  "spec": ["ECMAScript §15.7 Class Definitions"],
+  "notes": "The moved member would hide the target's inherited static member of the same name."
+}

@@ -109,3 +109,25 @@ test("make-method-static prints a diff", () => {
     assert.equal(result.exitCode, 0, result.err);
     assert.match(result.out, /^\+    static total\(order: Order, qty: number\) \{$/m);
 });
+
+test("move-static-member prints a diff", () => {
+    const project = createProject();
+    fs.writeFileSync(
+        path.join(project, "src", "order.ts"),
+        "export class Pricing {}\n\nexport class Order {\n    static twice(value: number) {\n        return value * 2;\n    }\n}\n\nexport const run = () => Order.twice(2);\n",
+    );
+    const workspace = path.join(project, "tsconfig.json");
+    const result = run([
+        "move-static-member",
+        "--workspace",
+        workspace,
+        "--file",
+        "src/order.ts",
+        "--at",
+        "4:12",
+        "--target",
+        "src/order.ts#Pricing",
+    ]);
+    assert.equal(result.exitCode, 0, result.err);
+    assert.match(result.out, /^\+export const run = \(\) => Pricing\.twice\(2\);$/m);
+});

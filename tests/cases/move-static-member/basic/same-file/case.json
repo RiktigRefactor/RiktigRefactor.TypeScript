@@ -1,0 +1,5 @@
+{
+  "options": { "target": "main.ts#Pricing" },
+  "spec": ["ECMAScript §15.7 Class Definitions"],
+  "notes": "Moves a static method to another class in the same file and rewrites its references."
+}

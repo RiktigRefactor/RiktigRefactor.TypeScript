@@ -1,0 +1,7 @@
+{
+  "options": { "target": "main.ts#Pricing" },
+  "refuse": "this-in-static-member",
+  "naiveShouldFail": true,
+  "spec": ["ECMAScript §13.2.1 The this Keyword", "ECMAScript §15.7 Class Definitions"],
+  "notes": "In a static method, this is the class it is called through; after the move it would be the target."
+}

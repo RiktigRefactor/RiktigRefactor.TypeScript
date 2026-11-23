@@ -1,0 +1,7 @@
+{
+  "options": { "target": "pricing.ts#Pricing" },
+  "refuse": "would-introduce-errors",
+  "naiveShouldFail": true,
+  "spec": ["ECMAScript §16.2 Modules"],
+  "notes": "The body uses a name of the source module, which the target module doesn't have."
+}

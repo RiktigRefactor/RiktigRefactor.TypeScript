@@ -144,7 +144,7 @@ export function nameResolvesTo(checker: ts.TypeChecker, location: ts.Node, name:
         .find((candidate) => candidate.name === name);
     if (!found) return false;
     const resolved = found.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(found) : found;
-    return resolved === symbol;
+    return checker.getExportSymbolOfSymbol(resolved) === checker.getExportSymbolOfSymbol(symbol);
 }
 
 export function lowerCamelCase(name: string): string {
@@ -201,6 +201,8 @@ export interface VerificationOptions {
         insertedInto: string;
         insertedAt: number;
         skip?: (symbol: ts.Symbol) => boolean;
+        /** Names inserted with the moved text that have no counterpart in the original, such as `this`'s replacements. */
+        skipNewName?: (name: string) => boolean;
     };
 }
 
@@ -255,7 +257,8 @@ export function verifyEdits(
 
 /**
  * The moved text lands as an inserted copy; its identifiers, in order, must bind to what the original's did,
- * apart from those the refactoring rewrites (`skip`).
+ * apart from those the refactoring rewrites (`skip`). Symbols declared inside the moved text are matched by
+ * the position of their declaration among the moved identifiers.
  */
 function checkMovedText(
     oldOccurrences: ReturnType<typeof collectBoundOccurrences>,
@@ -264,40 +267,70 @@ function checkMovedText(
     moved: NonNullable<VerificationOptions["movedText"]>,
 ): string | undefined {
     const mapOld = (fileName: string, position: number) => editMap.oldToNew(fileName, position);
-    const expected = oldOccurrences
-        .filter((occurrence) => occurrence.fileName === moved.fileName)
-        .filter((occurrence) => occurrence.position >= moved.oldStart && occurrence.position < moved.oldEnd)
+    const isInMoved = (fileName: string, position: number) =>
+        fileName === moved.fileName && position >= moved.oldStart && position < moved.oldEnd;
+    const oldList = oldOccurrences
+        .filter((occurrence) => isInMoved(occurrence.fileName, occurrence.position))
         .filter((occurrence) => !occurrence.symbols.some((symbol) => moved.skip?.(symbol)))
-        .map((occurrence) => ({
-            name: occurrence.name,
-            keys: occurrence.symbols.filter((symbol) => !isMember(symbol)).map((symbol) => symbolKey(symbol, mapOld)),
-        }));
+        .sort((a, b) => a.position - b.position);
+    const oldIndexByPosition = new Map(oldList.map((occurrence, index) => [occurrence.position, index]));
+    const oldKey = (symbol: ts.Symbol) => {
+        const declarations = symbol.declarations ?? [];
+        const inner =
+            declarations.length > 0 &&
+            declarations.every((declaration) =>
+                isInMoved(declaration.getSourceFile().fileName, declaration.getStart()),
+            );
+        if (!inner) return symbolKey(symbol, mapOld);
+        return declarations
+            .map((declaration) => `inner#${oldIndexByPosition.get(declarationNameStart(declaration))}`)
+            .join("|");
+    };
+
     const newChecker = newProgram.getTypeChecker();
-    const inserted: { name: string; keys: string[] }[] = [];
-    {
-        const fileName = moved.insertedInto;
-        const sourceFile = newProgram.getSourceFile(fileName)!;
-        forEachDescendant(sourceFile, (node) => {
-            if (!(ts.isIdentifier(node) || ts.isPrivateIdentifier(node))) return;
-            const origin = editMap.newToOld(fileName, node.getStart(sourceFile));
-            if (!origin.isPureInsertion || origin.oldPosition !== moved.insertedAt) return;
-            const symbols = symbolsBoundBy(newChecker, node);
-            inserted.push({
-                name: node.text,
-                keys: symbols.filter((symbol) => !isMember(symbol)).map((symbol) => symbolKey(symbol, (_, p) => p)),
-            });
-        });
-    }
-    for (const occurrence of expected) {
-        const index = inserted.findIndex((candidate) => candidate.name === occurrence.name);
-        if (index < 0) return `\`${occurrence.name}\` in the moved code was not found after moving it.`;
-        const [match] = inserted.splice(index, 1);
-        for (const key of occurrence.keys) {
-            if (!match.keys.includes(key))
-                return `In the moved code, \`${occurrence.name}\` would refer to a different declaration.`;
+    const sourceFile = newProgram.getSourceFile(moved.insertedInto)!;
+    const newList: { node: ts.Identifier | ts.PrivateIdentifier; position: number }[] = [];
+    forEachDescendant(sourceFile, (node) => {
+        if (!(ts.isIdentifier(node) || ts.isPrivateIdentifier(node))) return;
+        const position = node.getStart(sourceFile);
+        const origin = editMap.newToOld(moved.insertedInto, position);
+        if (origin.isPureInsertion && origin.oldPosition === moved.insertedAt) newList.push({ node, position });
+    });
+    const newIndexByPosition = new Map(newList.map((entry, index) => [entry.position, index]));
+    const newKey = (symbol: ts.Symbol) => {
+        const declarations = symbol.declarations ?? [];
+        const indices = declarations.map((declaration) =>
+            declaration.getSourceFile().fileName === moved.insertedInto
+                ? newIndexByPosition.get(declarationNameStart(declaration))
+                : undefined,
+        );
+        if (declarations.length > 0 && indices.every((index) => index !== undefined))
+            return indices.map((index) => `inner#${index}`).join("|");
+        return symbolKey(symbol, (_, position) => position);
+    };
+
+    const movedNames = newList.filter((entry) => !(moved.skipNewName?.(entry.node.text) ?? false));
+    if (movedNames.length !== oldList.length)
+        return "The moved code has a different number of names than the original.";
+    for (let index = 0; index < oldList.length; index++) {
+        const old = oldList[index];
+        const entry = movedNames[index];
+        if (old.name !== entry.node.text)
+            return `The moved code has \`${entry.node.text}\` where the original had \`${old.name}\`.`;
+        const actual = symbolsBoundBy(newChecker, entry.node)
+            .filter((symbol) => !isMember(symbol))
+            .map(newKey);
+        for (const symbol of old.symbols.filter((candidate) => !isMember(candidate))) {
+            if (!actual.includes(oldKey(symbol)))
+                return `In the moved code, \`${old.name}\` would refer to a different declaration.`;
         }
     }
     return undefined;
+}
+
+function declarationNameStart(declaration: ts.Declaration): number {
+    const name = (declaration as ts.NamedDeclaration).name;
+    return (name ?? declaration).getStart();
 }
 
 function isMember(symbol: ts.Symbol): boolean {

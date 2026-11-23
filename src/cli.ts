@@ -5,6 +5,7 @@ import { unifiedDiff } from "./diff.js";
 import { applyProtocolEdits, toTextEdits } from "./edits.js";
 import { extractIife } from "./extractIife.js";
 import { makeMethodStatic } from "./makeMethodStatic.js";
+import { moveStaticMember } from "./moveStaticMember.js";
 import type { Position, Result } from "./protocol.js";
 import { rename } from "./rename.js";
 import { Workspace } from "./workspace.js";
@@ -18,6 +19,7 @@ const usage = `Usage:
   riktig-ts rename --workspace tsconfig.json --file src/foo.ts --at 12:5 --new-name count [--apply] [--json]
   riktig-ts extract-iife --workspace tsconfig.json --file src/foo.ts --from 12:19 --to 12:30 [--apply] [--json]
   riktig-ts make-method-static --workspace tsconfig.json --file src/foo.ts --at 12:5 [--receiver-name order] [--apply] [--json]
+  riktig-ts move-static-member --workspace tsconfig.json --file src/foo.ts --at 12:5 --target src/pricing.ts#Pricing [--apply] [--json]
 
 Positions are line:column, 1-based; columns count Unicode scalar values.
 --to is the position just after the selection.
@@ -32,6 +34,7 @@ interface OptionValues {
     to?: string;
     "new-name"?: string;
     "receiver-name"?: string;
+    target?: string;
 }
 
 const commands: Record<string, (workspace: Workspace, file: string, values: OptionValues) => Result> = {
@@ -52,6 +55,12 @@ const commands: Record<string, (workspace: Workspace, file: string, values: Opti
             file,
             position: parsePosition(values.at, "at"),
             receiverName: values["receiver-name"],
+        }),
+    "move-static-member": (workspace, file, values) =>
+        moveStaticMember(workspace, {
+            file,
+            position: parsePosition(values.at, "at"),
+            target: required(values.target, "target"),
         }),
 };
 
@@ -79,6 +88,7 @@ export function main(argv: readonly string[], output: Output): number {
                 to: { type: "string" },
                 "new-name": { type: "string" },
                 "receiver-name": { type: "string" },
+                target: { type: "string" },
                 apply: { type: "boolean", default: false },
                 json: { type: "boolean", default: false },
             },

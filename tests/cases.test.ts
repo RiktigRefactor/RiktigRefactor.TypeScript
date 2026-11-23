@@ -5,6 +5,7 @@ import { describe, test } from "node:test";
 import { applyProtocolEdits, positionOf } from "../src/edits.js";
 import { extractIife } from "../src/extractIife.js";
 import { makeMethodStatic } from "../src/makeMethodStatic.js";
+import { moveStaticMember } from "../src/moveStaticMember.js";
 import type { Position, Result } from "../src/protocol.js";
 import { rename } from "../src/rename.js";
 import { Workspace } from "../src/workspace.js";
@@ -96,6 +97,7 @@ type CursorRefactoring = (
 /** Refactorings that take a cursor and options, with a `naive` option the edge cases run against. */
 const cursorRefactorings: Record<string, CursorRefactoring> = {
     "make-method-static": makeMethodStatic as CursorRefactoring,
+    "move-static-member": moveStaticMember as unknown as CursorRefactoring,
 };
 
 function runRefactoring(

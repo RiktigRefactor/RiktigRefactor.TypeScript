@@ -40,4 +40,12 @@ A new code is listed in the release notes.
 | `super-in-body` | Make method static: the method uses `super`. |
 | `this-type` | Make method static: the method uses `this` as a type. |
 | `arguments-in-body` | The method uses `arguments`, whose contents would change. |
+| `not-movable` | Move static member: the symbol is not a static method or field of a named class, or has decorators, overload signatures, or a computed or private name. |
+| `target-not-found` | Move static member: the target file or class doesn't exist in the workspace, or is the member's own class. |
+| `initialization-order` | Move static member: a reference runs while modules or classes are being defined, when the target may not be defined yet. |
+| `target-not-in-scope` | Move static member: the target class's name doesn't refer to it at a reference. |
+| `reference-not-through-class` | Move static member: a reference is not `ClassName.member`, or reaches a field through a subclass. |
+| `import-would-be-removed` | A file's import would be left unused, so the compiler would drop it and its module would stop running there. |
+| `initializer-has-effects` | Move static member: the field's initializer, or the target's static initialization, is not a literal. |
+| `this-in-static-member` | Move static member: the member uses `this` or `super`. |
 | `internal-verification-failed` | The tool's own check of its result failed. This is a bug in the tool; please report it. |

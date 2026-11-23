@@ -1,0 +1,6 @@
+{
+  "options": { "target": "main.ts#Pricing" },
+  "refuse": "conflicting-declaration",
+  "naiveShouldFail": true,
+  "spec": ["ECMAScript §15.7 Class Definitions"]
+}
