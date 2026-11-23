@@ -2,6 +2,13 @@ import ts from "typescript";
 import { EditMap, locationOf, offsetOf, type TextEdit, toProtocolEdits } from "./edits.js";
 import type { Position, Result, Warning } from "./protocol.js";
 import { refuse } from "./results.js";
+import {
+    findDirectEval,
+    findDynamicMemberAccess,
+    isSubtypeByHeritage,
+    runtimeProtocolNames,
+    siteOf,
+} from "./semantics.js";
 import { forEachDescendant, identifierAt, isReservedWord, isValidIdentifierText } from "./syntax.js";
 import { collectBoundOccurrences, describeDiagnostic, findBindingChanges, findNewDiagnostics } from "./verification.js";
 import type { Workspace } from "./workspace.js";
@@ -12,44 +19,6 @@ export interface RenameRequest {
     position: Position;
     newName: string;
 }
-
-/**
- * Member names that the JavaScript runtime or common protocols look up by spelling,
- * so renaming a member to or from one changes behavior without changing any binding.
- */
-const runtimeProtocolNames = new Set([
-    "constructor",
-    "prototype",
-    "__proto__",
-    "toString",
-    "toLocaleString",
-    "valueOf",
-    "toJSON",
-    "then",
-    "catch",
-    "finally",
-    "next",
-    "return",
-    "throw",
-    "done",
-    "value",
-    "length",
-    "name",
-    "message",
-    "stack",
-    "cause",
-    "hasOwnProperty",
-    "isPrototypeOf",
-    "propertyIsEnumerable",
-    "call",
-    "apply",
-    "bind",
-    "get",
-    "set",
-    "has",
-    "size",
-    "handleEvent",
-]);
 
 const memberFlags =
     ts.SymbolFlags.Property | ts.SymbolFlags.Method | ts.SymbolFlags.Accessor | ts.SymbolFlags.EnumMember;
@@ -221,62 +190,6 @@ function findInvalidNameReason(oldName: string, newName: string, isMember: boole
     return undefined;
 }
 
-interface NamedSite {
-    name: string;
-    site: { fileName: string; start: number; end: number };
-}
-
-/** A property access by name on a value whose type doesn't resolve it, such as `any`. */
-function findDynamicMemberAccess(
-    program: ts.Program,
-    workspace: Workspace,
-    checker: ts.TypeChecker,
-    names: readonly string[],
-): NamedSite | undefined {
-    for (const fileName of workspace.files.keys()) {
-        const sourceFile = program.getSourceFile(fileName);
-        if (!sourceFile) continue;
-        let found: NamedSite | undefined;
-        forEachDescendant(sourceFile, (node) => {
-            if (found) return;
-            let nameNode: ts.Node | undefined;
-            let name: string | undefined;
-            if (ts.isPropertyAccessExpression(node) && ts.isIdentifier(node.name)) {
-                nameNode = node.name;
-                name = node.name.text;
-            } else if (ts.isElementAccessExpression(node) && ts.isStringLiteralLike(node.argumentExpression)) {
-                nameNode = node.argumentExpression;
-                name = node.argumentExpression.text;
-            } else if (ts.isBindingElement(node) && ts.isObjectBindingPattern(node.parent)) {
-                const key = node.propertyName ?? node.name;
-                if (ts.isIdentifier(key) || ts.isStringLiteral(key)) {
-                    nameNode = key;
-                    name = key.text;
-                }
-            }
-            if (!nameNode || name === undefined || !names.includes(name)) return;
-            if (ts.isBindingElement(node)) {
-                const patternType = checker.getTypeAtLocation(node.parent);
-                if (isUntypedObject(patternType)) found = { name, site: siteOf(sourceFile, nameNode) };
-                return;
-            }
-            const receiver = (node as ts.PropertyAccessExpression | ts.ElementAccessExpression).expression;
-            if (isUntypedObject(checker.getTypeAtLocation(receiver)))
-                found = { name, site: siteOf(sourceFile, nameNode) };
-        });
-        if (found) return found;
-    }
-    return undefined;
-}
-
-function isUntypedObject(type: ts.Type): boolean {
-    return (type.flags & (ts.TypeFlags.Any | ts.TypeFlags.Unknown)) !== 0;
-}
-
-function siteOf(sourceFile: ts.SourceFile, node: ts.Node) {
-    return { fileName: sourceFile.fileName, start: node.getStart(sourceFile), end: node.end };
-}
-
 /**
  * Renaming a member of a class or interface to a name that a base or derived type already has
  * can make one override the other without any reference changing what it binds to.
@@ -314,37 +227,6 @@ function findInheritedMemberCollision(
         if (found) return found;
     }
     return undefined;
-}
-
-function isSubtypeByHeritage(checker: ts.TypeChecker, type: ts.Type, ancestor: ts.Type): boolean {
-    const seen = new Set<ts.Type>();
-    const visit = (current: ts.Type): boolean => {
-        if (seen.has(current)) return false;
-        seen.add(current);
-        if (current === ancestor || current.symbol === ancestor.symbol) return true;
-        const target = (current as ts.TypeReference).target ?? current;
-        if (
-            !(target.flags & ts.TypeFlags.Object) ||
-            !((target as ts.ObjectType).objectFlags & ts.ObjectFlags.ClassOrInterface)
-        )
-            return false;
-        const bases = checker.getBaseTypes(target as ts.InterfaceType);
-        const implemented = implementedTypes(checker, target);
-        return [...bases, ...implemented].some(visit);
-    };
-    return visit(type);
-}
-
-function implementedTypes(checker: ts.TypeChecker, type: ts.Type): ts.Type[] {
-    const result: ts.Type[] = [];
-    for (const declaration of type.symbol?.declarations ?? []) {
-        if (!ts.isClassLike(declaration)) continue;
-        for (const clause of declaration.heritageClauses ?? []) {
-            if (clause.token !== ts.SyntaxKind.ImplementsKeyword) continue;
-            for (const implemented of clause.types) result.push(checker.getTypeAtLocation(implemented));
-        }
-    }
-    return result;
 }
 
 function findStringsNamingSymbol(program: ts.Program, workspace: Workspace, oldName: string): Warning[] {
@@ -404,26 +286,6 @@ function findLiteralUseOfName(
             const isBracketKey = ts.isElementAccessExpression(parent) && parent.argumentExpression === node;
             const isLiteralType = ts.isLiteralTypeNode(parent);
             if (isInOperand || isBracketKey || isLiteralType) found = siteOf(sourceFile, node);
-        });
-        if (found) return found;
-    }
-    return undefined;
-}
-
-function findDirectEval(program: ts.Program, workspace: Workspace, fileNames: ReadonlySet<string>) {
-    for (const fileName of fileNames) {
-        const sourceFile = program.getSourceFile(fileName);
-        if (!sourceFile || !workspace.files.has(fileName)) continue;
-        let found: ReturnType<typeof siteOf> | undefined;
-        forEachDescendant(sourceFile, (node) => {
-            if (
-                !found &&
-                ts.isCallExpression(node) &&
-                ts.isIdentifier(node.expression) &&
-                node.expression.text === "eval"
-            ) {
-                found = siteOf(sourceFile, node);
-            }
         });
         if (found) return found;
     }

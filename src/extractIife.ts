@@ -2,6 +2,14 @@ import ts from "typescript";
 import { EditMap, locationOf, offsetOf, type TextEdit, toProtocolEdits } from "./edits.js";
 import type { Position, RefusalCode, Result } from "./protocol.js";
 import { bugReportSuggestion, refuse } from "./results.js";
+import {
+    bindsOwnArgumentsAndSuper,
+    enclosingRuntimeFunction,
+    isAssignmentTarget,
+    isClassFieldInitializerBoundary,
+    isRuntimeFunction,
+    skipParenthesesUpward,
+} from "./semantics.js";
 import { forEachDescendant } from "./syntax.js";
 import {
     collectBoundOccurrences,
@@ -138,77 +146,6 @@ function trimWhitespace(text: string, start: number, end: number) {
  * so only a type annotation can change which declaration a member resolves to.
  */
 const memberSymbolFlags = ts.SymbolFlags.Property | ts.SymbolFlags.Method | ts.SymbolFlags.Accessor;
-
-const runtimeFunctionKinds = new Set([
-    ts.SyntaxKind.FunctionDeclaration,
-    ts.SyntaxKind.FunctionExpression,
-    ts.SyntaxKind.ArrowFunction,
-    ts.SyntaxKind.MethodDeclaration,
-    ts.SyntaxKind.Constructor,
-    ts.SyntaxKind.GetAccessor,
-    ts.SyntaxKind.SetAccessor,
-    ts.SyntaxKind.ClassStaticBlockDeclaration,
-]);
-
-function isRuntimeFunction(node: ts.Node): boolean {
-    return runtimeFunctionKinds.has(node.kind);
-}
-
-/** Functions that bind their own `arguments`, `super`, and `new.target`; arrow functions don't. */
-function bindsOwnArgumentsAndSuper(node: ts.Node): boolean {
-    return isRuntimeFunction(node) && node.kind !== ts.SyntaxKind.ArrowFunction;
-}
-
-/** Class members other than methods run with their own `this` (field initializers). */
-function isClassFieldInitializerBoundary(node: ts.Node): boolean {
-    return ts.isPropertyDeclaration(node) && ts.isClassLike(node.parent);
-}
-
-function enclosingRuntimeFunction(node: ts.Node): ts.Node | undefined {
-    for (let current = node.parent; current; current = current.parent) {
-        if (isRuntimeFunction(current)) return current;
-    }
-    return undefined;
-}
-
-function skipParenthesesUpward(node: ts.Node): ts.Node {
-    while (ts.isParenthesizedExpression(node.parent)) node = node.parent;
-    return node;
-}
-
-/** True when the expression is a target that gets assigned, not a value that is read. */
-function isAssignmentTarget(node: ts.Node): boolean {
-    const outer = skipParenthesesUpward(node);
-    const parent = outer.parent;
-    if (ts.isBinaryExpression(parent) && parent.left === outer && isAssignmentOperator(parent.operatorToken.kind))
-        return true;
-    if (
-        (ts.isPrefixUnaryExpression(parent) || ts.isPostfixUnaryExpression(parent)) &&
-        isIncrementOrDecrement(parent.operator)
-    ) {
-        return true;
-    }
-    if ((ts.isForInStatement(parent) || ts.isForOfStatement(parent)) && parent.initializer === outer) return true;
-    if (ts.isShorthandPropertyAssignment(parent) || ts.isSpreadAssignment(parent) || ts.isSpreadElement(parent)) {
-        return isDestructuringTarget(parent.parent);
-    }
-    if (ts.isPropertyAssignment(parent) && parent.initializer === outer) return isDestructuringTarget(parent.parent);
-    if (ts.isArrayLiteralExpression(parent)) return isDestructuringTarget(parent);
-    return false;
-}
-
-function isDestructuringTarget(literal: ts.Node): boolean {
-    if (!ts.isObjectLiteralExpression(literal) && !ts.isArrayLiteralExpression(literal)) return false;
-    return isAssignmentTarget(literal);
-}
-
-function isAssignmentOperator(kind: ts.SyntaxKind): boolean {
-    return kind >= ts.SyntaxKind.FirstAssignment && kind <= ts.SyntaxKind.LastAssignment;
-}
-
-function isIncrementOrDecrement(operator: ts.SyntaxKind): boolean {
-    return operator === ts.SyntaxKind.PlusPlusToken || operator === ts.SyntaxKind.MinusMinusToken;
-}
 
 function isDirectEval(node: ts.Node): boolean {
     return ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === "eval";
