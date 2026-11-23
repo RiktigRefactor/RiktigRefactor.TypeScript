@@ -1,0 +1,6 @@
+{
+  "options": { "newName": "largest" },
+  "refuse": "not-renameable",
+  "spec": ["ES §21.3 The Math Object"],
+  "notes": "Math.max is declared in the standard library, outside the workspace."
+}

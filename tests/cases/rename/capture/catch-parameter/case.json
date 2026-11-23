@@ -1,0 +1,7 @@
+{
+  "options": { "newName": "error" },
+  "refuse": "binding-would-change",
+  "naiveShouldFail": true,
+  "spec": ["ES §14.15 The try Statement"],
+  "notes": "The catch clause's parameter would capture the renamed variable."
+}

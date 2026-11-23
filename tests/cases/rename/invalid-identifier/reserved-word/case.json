@@ -1,0 +1,6 @@
+{
+  "options": { "newName": "class" },
+  "refuse": "invalid-identifier",
+  "naiveShouldFail": true,
+  "spec": ["ES §12.7.2 Keywords and Reserved Words"]
+}

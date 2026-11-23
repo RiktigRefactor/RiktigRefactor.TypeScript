@@ -1,0 +1,5 @@
+{
+  "options": { "newName": "format" },
+  "spec": ["TS handbook: Declaration Merging"],
+  "notes": "A function merged with a namespace is renamed together."
+}

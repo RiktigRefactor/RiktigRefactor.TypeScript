@@ -1,0 +1,5 @@
+{
+  "options": { "newName": "total" },
+  "spec": ["ES §14.3.1 Let and Const Declarations"],
+  "notes": "Renames a local and its references."
+}

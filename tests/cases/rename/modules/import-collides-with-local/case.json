@@ -1,0 +1,7 @@
+{
+  "options": { "newName": "rate" },
+  "refuse": "conflicting-declaration",
+  "naiveShouldFail": true,
+  "spec": ["ES §16.2.2 Imports"],
+  "notes": "The new name collides with an import in a file that uses the renamed export."
+}

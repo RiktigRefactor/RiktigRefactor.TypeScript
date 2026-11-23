@@ -1,0 +1,5 @@
+{
+  "options": { "newName": "total" },
+  "refuse": "invalid-identifier",
+  "spec": ["ES §15.7 Class Definitions"]
+}

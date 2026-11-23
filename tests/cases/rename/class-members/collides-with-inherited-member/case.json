@@ -1,0 +1,7 @@
+{
+  "options": { "newName": "speak" },
+  "refuse": "conflicting-declaration",
+  "naiveShouldFail": true,
+  "spec": ["ES §15.7 Class Definitions", "TS handbook: Classes"],
+  "notes": "The renamed method would override the base class's speak, changing what a call through the base type runs."
+}

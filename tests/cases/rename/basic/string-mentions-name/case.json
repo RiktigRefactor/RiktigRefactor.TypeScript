@@ -1,0 +1,6 @@
+{
+  "options": { "newName": "amount" },
+  "warnings": ["string-mentions-name"],
+  "spec": ["ES §13.10 Relational Operators"],
+  "notes": "Rename leaves strings alone and warns about a string equal to the old name. Here the string names a different object's key, so the program still passes."
+}

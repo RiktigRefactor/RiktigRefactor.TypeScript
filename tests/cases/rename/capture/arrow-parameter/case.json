@@ -1,0 +1,7 @@
+{
+  "options": { "newName": "item" },
+  "refuse": "binding-would-change",
+  "naiveShouldFail": true,
+  "spec": ["ES §15.3 Arrow Function Definitions"],
+  "notes": "An arrow's parameter would capture the renamed variable."
+}

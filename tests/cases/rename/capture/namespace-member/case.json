@@ -1,0 +1,7 @@
+{
+  "options": { "newName": "rate" },
+  "refuse": "binding-would-change",
+  "naiveShouldFail": true,
+  "spec": ["TS handbook: Namespaces"],
+  "notes": "A namespace's exported member would capture the renamed module-level variable."
+}

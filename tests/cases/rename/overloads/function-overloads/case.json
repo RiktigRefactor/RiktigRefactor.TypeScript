@@ -1,0 +1,5 @@
+{
+  "options": { "newName": "measure" },
+  "spec": ["TS handbook: More on Functions"],
+  "notes": "Renaming one overload signature renames every signature and the implementation."
+}

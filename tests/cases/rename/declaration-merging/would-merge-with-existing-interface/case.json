@@ -1,0 +1,6 @@
+{
+  "options": { "newName": "Point" },
+  "refuse": "binding-would-change",
+  "spec": ["TS handbook: Declaration Merging"],
+  "notes": "The renamed interface would merge with an existing one without any compile error. Types are erased, so only the binding check notices."
+}

@@ -1,0 +1,5 @@
+{
+  "options": { "newName": "Shape" },
+  "spec": ["TS handbook: Declaration Merging"],
+  "notes": "Renaming one declaration of a merged interface renames all of them."
+}

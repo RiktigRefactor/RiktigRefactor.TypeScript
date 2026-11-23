@@ -1,0 +1,7 @@
+{
+  "options": { "newName": "bark" },
+  "refuse": "conflicting-declaration",
+  "naiveShouldFail": true,
+  "spec": ["ES §15.7 Class Definitions", "TS handbook: Classes"],
+  "notes": "A derived class's bark would start overriding the renamed base method."
+}

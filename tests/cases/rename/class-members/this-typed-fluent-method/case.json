@@ -1,0 +1,5 @@
+{
+  "options": { "newName": "append" },
+  "spec": ["TS handbook: Classes"],
+  "notes": "A method returning the polymorphic this type, called through a derived class."
+}

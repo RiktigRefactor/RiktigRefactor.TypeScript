@@ -1,0 +1,5 @@
+{
+  "options": { "newName": "describe" },
+  "spec": ["ES §15.7 Class Definitions", "TS handbook: Classes"],
+  "notes": "Renaming an overriding method also renames the base method and the interface member, so dynamic dispatch is unchanged."
+}
