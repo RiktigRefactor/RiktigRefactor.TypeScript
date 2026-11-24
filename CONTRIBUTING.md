@@ -1,5 +1,7 @@
 # Contributing
 
+See [building and testing](docs/building-and-testing.md) for the toolchain, the test cases, and how they cite the C++ standard.
+
 ## Commit messages
 
 Commits use [Arlo's Commit Notation](https://github.com/RefactoringCombos/ArlosCommitNotation).
