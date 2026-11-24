@@ -1,0 +1,15 @@
+[tools]
+dotnet = "latest"
+node = "22"
+
+[tasks.mdsnippets]
+description = "Update snippets and the table of contents in markdown files"
+run = ["dotnet tool restore", "dotnet mdsnippets"]
+
+[tasks.build-and-test]
+description = "Build and run all tests"
+run = [
+  "npm ci --no-audit --no-fund",
+  "npm run build",
+  "npm test",
+]

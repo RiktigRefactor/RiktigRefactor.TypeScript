@@ -3,7 +3,10 @@ set -euo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
-npm ci --no-audit --no-fund
-npx prettier --check "src/**/*.ts" "tests/**/*.ts"
-npm run build
-npm test
+if ! command -v mise >/dev/null 2>&1; then
+    echo "[error] 'mise' is required but not found on PATH. Install Mise: https://mise.jdx.dev/"
+    exit 127
+fi
+
+mise --quiet install
+mise task run build-and-test -- "$@"

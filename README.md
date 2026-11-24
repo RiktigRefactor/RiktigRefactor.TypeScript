@@ -1,165 +1,136 @@
 # RiktigRefactor.TypeScript
 
-Behavior-preserving refactorings for TypeScript, built on the TypeScript compiler API.
+[![Build and test](https://github.com/RiktigRefactor/RiktigRefactor.TypeScript/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/RiktigRefactor/RiktigRefactor.TypeScript/actions/workflows/build-and-test.yml)
+![Status: early development](https://img.shields.io/badge/status-early%20development-orange)
 
-*Riktig* (Swedish/Norwegian) means correct.
+Seriously safe behavior-preserving refactorings for TypeScript.
+*Riktig* means "correct" in Swedish/Norwegian.
 When the tool cannot prove a transformation is safe, it refuses with a clear reason instead of guessing.
 
 This is the TypeScript implementation of the [RiktigRefactor specification](https://github.com/RiktigRefactor/riktigrefactor.spec).
-The specification defines the correctness model, the refactorings, the JSON protocol, and the test format.
+
+<!-- toc -->
+## Contents
+
+  * [What it can do](#what-it-can-do)
+    * [Rename](#rename)
+    * [Extract IIFE](#extract-iife)
+    * [Make method static](#make-method-static)
+    * [Move static member](#move-static-member)
+  * [Using it](#using-it)
+  * [Building and testing](#building-and-testing)
+  * [Contributing](#contributing)<!-- endToc -->
 
 ## What it can do
 
-The tool has these refactorings: Rename, Extract IIFE, Make method static, and Move static member.
+The tool has these refactorings:
 
-Rename renames a symbol and every reference to it across the workspace, using the TypeScript language service to find the references.
-Where a name is also an implicit key, it keeps the key: renaming `total` in `{ total }` gives `{ total: amount }`, in `const { total } = source` gives `const { total: amount } = source`, and in `export { total }` gives `export { amount as total }`.
+### Rename
 
-After renaming, the tool type-checks the result and re-binds every identifier in the workspace, and refuses if any reference would bind to a different declaration.
-It refuses when:
+Rename renames a symbol and every reference to it across the workspace, keeping implicit keys such as `{ total }` intact.
 
-- the new name is not a valid identifier, or is a reserved word (allowed for members, as in `box.class`);
-- the symbol is declared or referenced outside the workspace, such as in the standard library;
-- the rename would introduce a compile error, or collide with an existing declaration;
-- a name would be captured or un-shadowed, or a declaration would merge with another one of the same kind;
-- the renamed member would override, or be overridden by, a member of a related class or interface;
-- the member's old or new name is one the runtime looks up by spelling, such as `toString`, `then`, or `next`;
-- a member with the old or new name is accessed on a value of type `any` or `unknown`, or a file the rename edits calls `eval` directly;
-- a string equal to the member's old name is used where property names reach the runtime as text: the left side of `in`, a bracket access, a string literal type, or a computed key whose type includes the old name.
-
-Extract IIFE wraps a selected expression, or whole statements of one block, in an immediately-invoked arrow function:
+#### Before
 
 ```ts
-// Before
-const total = price * qty;
+class Order {
+  qty = 0;
+  total() { return this.qty * 2; }
+}
+```
 
-// After
+#### After
+
+```ts
+class Order {
+  quantity = 0;
+  total() { return this.quantity * 2; }
+}
+```
+
+See more details in [docs/rename.md](docs/rename.md).
+
+### Extract IIFE
+
+Extract IIFE wraps a selected expression, or whole statements of one block, in an immediately-invoked arrow function.
+
+#### Before
+
+```ts
+const total = price * qty;
+```
+
+#### After
+
+```ts
 const total = ((price: number, qty: number): number => price * qty)(price, qty);
 ```
 
-Local variables of enclosing functions become parameters, annotated with the type the selection sees (narrowed where every use agrees), so the arrow function captures no local; module-level names are used directly.
-An arrow function takes `this` from the enclosing function, so `this` is used directly too.
-Statements that assign variables declared before them return those in an object that is assigned back at the call site (`({ a, b } = …)`); object destructuring, unlike array destructuring, doesn't run the iterator protocol.
-Statement lines are indented one more level, except lines inside a string or template literal.
-Where a line would start with `(` after a line without a semicolon, the tool adds `;`.
-It refuses when it can't prove that wrapping keeps behavior, for example when:
+See more details in [docs/extract-iife.md](docs/extract-iife.md).
 
-- the selection contains `return`, `yield`, `await`, or a `break` or `continue` whose target is outside it;
-- it uses `arguments`, `super`, or `new.target`;
-- the expression is used as a reference: assigned to, deleted, called as a method (which would lose its `this`), or part of an optional chain;
-- the expression assigns a variable that would become a parameter;
-- a variable crossing the boundary is assigned somewhere and also used by a closure, so a copy could go stale;
-- a `let` or `const` crossing the boundary might be read before it is initialized, so passing it would throw earlier;
-- inside a `try`, the statements assign a variable declared outside it, which an exception would lose;
-- the statements declare a `var` or a function (hoisted to the enclosing function), or a `let`, `const`, or class that is used after them;
-- a type it must write out can't be written, such as an anonymous class or `typeof` of a name the parameters shadow;
-- the file calls `eval` directly.
+### Make method static
 
-After extracting, it type-checks the result, checks that the call has the type the expression had (a literal keeps its literal type only where a `const` or a contextual type kept it), and checks that every variable binds as before, with the selection's uses of locals now bound to the new parameters.
+Make method static turns an instance method into a static method of its class, with the receiver as its first parameter.
 
-Each refusal has a code, listed in [refusal-codes.md](refusal-codes.md).
-
-See [limitations](https://github.com/RiktigRefactor/riktigrefactor.spec/blob/main/limitations.md) for what is out of scope, such as reflection, serialization by name, and updating comments and strings.
-Rename warns when a string literal equals the old name.
-Like C#'s `typeof(T).Name`, these observe names as text and are not detected:
-
-- a function's or class's `name` property, such as `User.name` or `this.constructor.name`;
-- the keys of an object, such as through `Object.keys`, `JSON.stringify`, or `for…in`, after renaming a property;
-- the reverse mapping of a numeric `enum`;
-- values that reach a renamed property's type without the compiler seeing it, such as through `as` assertions or `JSON.parse`.
-
-Make method static turns an instance method into a static method of its class: the receiver becomes the first parameter (named after the class in camelCase, or `--receiver-name`), `this` in the method (including in arrow functions) becomes that parameter, and every call `recv.total(3)` becomes `Order.total(recv, 3)`.
-It refuses when:
-
-- a related class or interface (a base, a subclass, or any interface or object type) has a member with the method's name, or the method is abstract, overrides another, or is called through `super`;
-- the method is used other than by a plain call: a method reference, an optional call, a bracket access, or through `any`, `unknown`, or the class's `prototype`;
-- a call's receiver can't be proved non-null (`this`, a `new` expression, a literal, or a `const` holding one), since a null receiver fails at a different point after the change;
-- the body uses `super`, `this` as a type, or `arguments`;
-- the class is generic, or the method has decorators or overload signatures;
-- the class name doesn't name the class at a call site;
-- `pass: "members"` is asked for; only passing the receiver is supported.
-
-After the change it type-checks the result and re-binds every identifier, so a receiver name that would capture another name is refused.
-
-Move static member moves a static method or field of a class to another class (`--target src/pricing.ts#Pricing`), in the same file or another, and rewrites every `Source.member` to `Target.member`.
-The member goes first in the target class, with its leading comments.
-Moving module-level functions and constants, or moving to a module, is not supported yet.
-It refuses when:
-
-- the member uses `this` or `super` (the class it was called through, which may be a subclass);
-- the target or a class related to it has a member with the same name;
-- a field's initializer is not a literal, or the target class has static initialization that is not;
-- a reference is not written `ClassName.member` (a variable of constructor type, destructuring), or reaches a field through a subclass;
-- a reference runs while modules or classes are being defined (outside any function), when the target may not be defined yet;
-- the target class's name doesn't refer to it at a reference, which would need a new import;
-- a file's import of the source module would be left unused, so the compiler would drop it and the module would stop running there;
-- the moved code would not compile at the target, or a name in it would refer to something else there.
-
-## Command line
-
-The package is not published yet; from a clone, build it with `./build-and-test` and run `node dist/src/cli.js` in place of `riktig-ts`.
-
-Preview a rename as a diff:
-
-```shell
-riktig-ts rename --workspace tsconfig.json --file src/order.ts --at 12:5 --new-name count
-```
-
-Preview an Extract IIFE of the text from line 12, column 19 up to (not including) column 30:
-
-```shell
-riktig-ts extract-iife --workspace tsconfig.json --file src/order.ts --from 12:19 --to 12:30
-```
-
-Positions are 1-based, and columns count Unicode scalar values.
-The workspace is the set of files a `tsconfig.json` includes.
-
-- `--apply` writes the changes to disk.
-- `--json` prints the result using the shared protocol, without the diff.
-
-Make a method static, with the cursor on its name:
-
-```shell
-riktig-ts make-method-static --workspace tsconfig.json --file src/order.ts --at 12:5 [--receiver-name order]
-```
-
-Move a static member, with the cursor on its name:
-
-```shell
-riktig-ts move-static-member --workspace tsconfig.json --file src/order.ts --at 12:12 --target src/pricing.ts#Pricing
-```
-
-The exit code is 0 on success, 1 when the refactoring is refused, and 2 on an error such as an unknown file.
-
-## Library
+#### Before
 
 ```ts
-import { extractIife, rename, Workspace } from "riktigrefactor-typescript";
-
-const workspace = Workspace.fromTsconfig("tsconfig.json");
-const renamed = rename(workspace, { file: "src/order.ts", position: { line: 12, column: 5 }, newName: "count" });
-const extracted = extractIife(workspace, { file: "src/order.ts", start: { line: 12, column: 19 }, end: { line: 12, column: 30 } });
+total(qty: number) { return this.price * qty; }
+const t = order.total(3);
 ```
 
-The package is not published yet.
-The result follows the [protocol](https://github.com/RiktigRefactor/riktigrefactor.spec/blob/main/protocol.md): edits with 1-based lines and columns, or a refusal with a reason code.
+#### After
 
-## Build and test
+```ts
+static total(order: Order, qty: number) { return order.price * qty; }
+const t = Order.total(order, 3);
+```
 
-Run `./build-and-test` on Linux or macOS, or `build-and-test.cmd` on Windows (it needs Git for Windows).
-It needs Node.js (the major version in [.node-version](.node-version)); it installs the pinned npm packages, checks formatting, compiles, and runs every test.
-Run `./tidy-code` to format the code.
+See more details in [docs/make-method-static.md](docs/make-method-static.md).
 
-The tool uses the compiler API of TypeScript 6; see [UPDATING_DEPENDENCIES.md](UPDATING_DEPENDENCIES.md) for why it does not use TypeScript 7 yet.
+### Move static member
 
-Test cases live in `tests/cases`, in the [format defined by the specification](https://github.com/RiktigRefactor/riktigrefactor.spec/blob/main/test-format.md).
-Every input and expected program is type-checked with `strict` on, compiled, and run with Node.js, and edge cases must fail under a deliberately naive implementation (in `tests/naive`).
+Move static member moves a static method or field of a class to another class, and rewrites every reference.
 
-### Citing the language specifications
+#### Before
 
-TypeScript has no current language specification, and its run-time behavior is JavaScript's.
-Following the [specification's citation table](https://github.com/RiktigRefactor/riktigrefactor.spec/blob/main/test-format.md#citations), every test case lists, in its `spec` field, either sections of the ECMAScript specification, written as `ECMAScript §<number> <title>` and numbered as in [ECMA-262, 16th edition (ES2025)](https://262.ecma-international.org/16.0/), for example `ECMAScript §14.3.1 Let and Const Declarations`; or, for TypeScript's type-system features, the feature's name, written as `TypeScript feature: <name>`, for example `TypeScript feature: declaration merging`.
+```ts
+class Order {
+  static rate() { return 0.2; }
+}
+const r = Order.rate();
+```
+
+#### After
+
+```ts
+class Pricing {
+  static rate() { return 0.2; }
+}
+const r = Pricing.rate();
+```
+
+See more details in [docs/move-static-member.md](docs/move-static-member.md).
+
+## Using it
+
+The package is not published yet; from a clone, build it with `./build-and-test` and run:
+
+```shell
+node dist/src/cli.js rename --workspace tsconfig.json --file src/order.ts --at 12:5 --new-name count
+```
+
+See [the command line](docs/command-line.md) for the options and exit codes, and [the library](docs/library.md) for using it from code.
+
+## Building and testing
+
+Install [Git](https://git-scm.com/) and [Mise](https://mise.jdx.dev/); Mise provides everything else.
+
+```shell
+./build-and-test
+```
+
+See [building and testing](docs/building-and-testing.md) for the toolchain, the test cases, and how they cite the language specifications.
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the commit message convention.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the commit message convention, and [AGENTS.md](AGENTS.md) for how the repo is organized.
