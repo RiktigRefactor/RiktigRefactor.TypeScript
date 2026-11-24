@@ -18,8 +18,7 @@ This is the TypeScript implementation of the [RiktigRefactor specification](http
     * [Make method static](#make-method-static)
     * [Move static member](#move-static-member)
   * [Using it](#using-it)
-  * [Building and testing](#building-and-testing)
-  * [Contributing](#contributing)<!-- endToc -->
+  * [Building and testing](#building-and-testing)<!-- endToc -->
 
 ## What it can do
 
@@ -123,14 +122,8 @@ See [the command line](docs/command-line.md) for the options and exit codes, and
 
 ## Building and testing
 
-Install [Git](https://git-scm.com/) and [Mise](https://mise.jdx.dev/); Mise provides everything else.
-
 ```shell
 ./build-and-test
 ```
 
-See [building and testing](docs/building-and-testing.md) for the toolchain, the test cases, and how they cite the language specifications.
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the commit message convention, and [AGENTS.md](AGENTS.md) for how the repo is organized.
+For more information, see [CONTRIBUTING.md](CONTRIBUTING.md).
